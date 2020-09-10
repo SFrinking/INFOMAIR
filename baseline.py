@@ -9,6 +9,13 @@ with open("dialog_acts.dat", "r") as infile:
     labels.append(label_utterance[0])
     utterances.append(label_utterance[1])
     
+    
+#split into train and test
+import numpy as np
+from sklearn.model_selection import train_test_split
+
+X_train, X_test, y_train, y_test = train_test_split(utterances, labels, test_size=0.15)
+
 #function to convert list to dictionary
 def Convert(lst): 
     counts = {}
@@ -17,7 +24,7 @@ def Convert(lst):
     return counts
 
 #count majority in training set
-dict=Convert(labels)
+dict=Convert(y_train)
 print(dict)
 #get highest count in dictionary
 def GetHighest(dictionary):
@@ -31,6 +38,17 @@ def GetHighest(dictionary):
 
 highest_label, highest_count=GetHighest(dict)
 
+
+#classify test set
+correct=0
+incorrect=0
+
+for y in y_test:
+    if y==highest_label:
+        correct+=1
+    else:
+        incorrect+=1
+print("accuracy of baseline: " + str(correct/(len(y_test))))
 #get user input, loop
 while True:
     choice = input("press 1 for baseline, 2 for keyword matching: ")
