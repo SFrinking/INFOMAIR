@@ -23,9 +23,10 @@ import nltk
 from nltk.corpus import stopwords
 nltk.download('stopwords')
 from nltk.tokenize import word_tokenize
-from sklearn.feature_extraction.text import CountVectorizer
+
 
 #creating bag of words representation
+from sklearn.feature_extraction.text import CountVectorizer
 stop_words = set(stopwords.words('english')) 
 vectorizer = CountVectorizer(stop_words = stop_words)
 
@@ -34,50 +35,47 @@ X_test_vectorized=vectorizer.transform(X_test)
 
 #classifier logistic regression
 
+
+#get evaluation metrics
+def EvalMetrics(y_predicted):
+    #create confusion matrix
+    from sklearn.metrics import confusion_matrix
+    cm=confusion_matrix(y_test,y_predicted)
+    
+    from sklearn.metrics import recall_score
+    mi_recall=recall_score(y_test, y_predicted, average="micro")
+    ma_recall=recall_score(y_test, y_predicted, average="macro")
+    
+    from sklearn.metrics import precision_score
+    mi_precision=precision_score(y_test, y_predicted, average='micro')
+    ma_precision=precision_score(y_test, y_predicted, average='macro')
+    
+    from sklearn.metrics import f1_score
+    mi_f_score= f1_score(y_test, y_predicted, average='micro')
+    ma_f_score= f1_score(y_test, y_predicted, average='macro')
+    print("micro recall, precision and f_score:" ,mi_recall, mi_precision, mi_f_score)
+    print("macro recall, precision and f_score:" ,ma_recall, ma_precision, ma_f_score)
+
 def TrainLogisticRegression():
     from sklearn.linear_model import LogisticRegression
-    clf = LogisticRegression(random_state=0).fit(X_train_vectorized, np.reshape(y_train,(-1,1)))
+    clf = LogisticRegression(random_state=0,solver='lbfgs', max_iter=200).fit(X_train_vectorized, np.reshape(y_train,(-1,1)))
     
     
     y_pred=clf.predict(X_test_vectorized)
     accuracy=clf.score(X_test_vectorized,y_test)
-    
-    #create confusion matrix
-    from sklearn.metrics import confusion_matrix
-    cm=confusion_matrix(y_test,y_pred)
-    
-    from sklearn.metrics import recall_score
-    recall=recall_score(y_test, y_pred, average="micro")
-    
-    from sklearn.metrics import precision_score
-    precision=precision_score(y_test, y_pred, average='micro')
-    
-    from sklearn.metrics import f1_score
-    f_score= f1_score(y_test, y_pred, average='micro')
-    print("recall, precision and f_score:" ,recall, precision, f_score)
+    EvalMetrics(y_pred)
     
     return clf
 
 def TrainNeuralNetwork():
     from sklearn.neural_network import MLPClassifier
-    clf = MLPClassifier(random_state=1, max_iter=300)
+    clf = MLPClassifier(random_state=1, max_iter=500)
     clf.fit(X_train_vectorized, np.reshape(y_train,(-1,1)))
             
     y_pred=clf.predict(X_test_vectorized)
     accuracy=clf.score(X_test_vectorized,y_test)
     
-    from sklearn.metrics import confusion_matrix
-    cm=confusion_matrix(y_test,y_pred)
-    
-    from sklearn.metrics import recall_score
-    recall=recall_score(y_test, y_pred, average="micro")
-    
-    from sklearn.metrics import precision_score
-    precision=precision_score(y_test, y_pred, average='micro')
-    
-    from sklearn.metrics import f1_score
-    f_score= f1_score(y_test, y_pred, average='micro')
-    print("recall, precision and f_score:" ,recall, precision, f_score)
+    EvalMetrics(y_pred)
     return clf
 
 #user input
