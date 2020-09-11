@@ -109,13 +109,14 @@ def plot_confusion_matrix(cm,target_names,title='Confusion matrix', cmap=None,no
     plt.xlabel('Predicted label\naccuracy={:0.4f}; misclass={:0.4f}'.format(accuracy, misclass))
     plt.show()
 
+#convert list of duplicates into dict with k,v where k=label and v=count
 def Convert(lst): 
     counts = {}
     for i in lst:
       counts[i] = counts.get(i, 0) + 1
     return counts
 
-
+#plot confusion matrix and print label counts
 def make_confusion_matrix(y_predicted):
     dictionary=Convert(y_test)
     print(dictionary)
@@ -152,7 +153,6 @@ def TrainLogisticRegression():
     y_pred=clf.predict(X_test_vectorized)
     accuracy=clf.score(X_test_vectorized,y_test)
     EvalMetrics(y_pred)
-    
     return clf
 
 def TrainNeuralNetwork():
@@ -162,7 +162,6 @@ def TrainNeuralNetwork():
             
     y_pred=clf.predict(X_test_vectorized)
     accuracy=clf.score(X_test_vectorized,y_test)
-    
     EvalMetrics(y_pred)
     return clf
 
