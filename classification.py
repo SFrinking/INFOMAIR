@@ -32,8 +32,8 @@ vectorizer = CountVectorizer()
 X_train_vectorized = vectorizer.fit_transform(X_train)
 X_test_vectorized=vectorizer.transform(X_test)
 
+#perform oversampling on dataset
 from imblearn.over_sampling import RandomOverSampler
-sampling_strategy={'confirm':6000,'affirm':2000, 'reqalts':4000, 'ack':2000,'repeat':2000, 'negate':750,'reqmore':500, 'deny':2000, 'restart':2000}
 ros = RandomOverSampler(random_state=42 )
 X_train_vectorized, y_train = ros.fit_resample(X_train_vectorized, y_train)
 
@@ -172,12 +172,12 @@ def TrainLogisticRegression():
 
 def TrainNeuralNetwork():
     from sklearn.neural_network import MLPClassifier
-    clf = MLPClassifier(random_state=1, max_iter=500)
+    clf = MLPClassifier(random_state=1, max_iter=200)
     clf.fit(X_train_vectorized, np.reshape(y_train,(-1,1)))
             
     y_pred=clf.predict(X_test_vectorized)
     accuracy=clf.score(X_test_vectorized,y_test)
-    EvalMetrics(y_pred)
+    make_confusion_matrix(y_pred)
     return clf
 
 def TrainSVM():
@@ -187,7 +187,7 @@ def TrainSVM():
     
     y_pred=clf.predict(X_test_vectorized)
     accuracy=clf.score(X_test_vectorized,y_test)
-    EvalMetrics(y_pred)
+    make_confusion_matrix(y_pred)
     return clf
 #user input
 while True:
