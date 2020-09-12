@@ -17,7 +17,6 @@ from sklearn.model_selection import train_test_split
 
 X_train, X_test, y_train, y_test = train_test_split(utterances, labels, test_size=0.15)
 
-
 ##vectorize training data
 import nltk
 from nltk.corpus import stopwords
@@ -121,6 +120,17 @@ def Convert(lst):
     for i in lst:
       counts[i] = counts.get(i, 0) + 1
     return counts
+
+
+#get dict of words and freq
+words=[]
+for u in utterances:
+    words+=u.split()
+d=Convert(words)
+from operator import itemgetter
+dic=sorted(d.items(), key=itemgetter(1))
+dic.reverse()
+
 
 #plot confusion matrix and print label counts
 def make_confusion_matrix(y_predicted):
