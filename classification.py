@@ -33,9 +33,10 @@ vectorizer = CountVectorizer()
 X_train_vectorized = vectorizer.fit_transform(X_train)
 X_test_vectorized=vectorizer.transform(X_test)
 
-#from imblearn.over_sampling import RandomOverSampler
-#ros = RandomOverSampler(random_state=42, sampling_strategy={'confirm':6000,'affirm':2000, 'reqalts':4000, 'ack':2000,'repeat':2000, 'negate':750,'reqmore':500, 'deny':2000, 'restart':2000})
-#X_train_vectorized, y_train = ros.fit_resample(X_train_vectorized, y_train)
+from imblearn.over_sampling import RandomOverSampler
+sampling_strategy={'confirm':6000,'affirm':2000, 'reqalts':4000, 'ack':2000,'repeat':2000, 'negate':750,'reqmore':500, 'deny':2000, 'restart':2000}
+ros = RandomOverSampler(random_state=42 )
+X_train_vectorized, y_train = ros.fit_resample(X_train_vectorized, y_train)
 
 #classifier logistic regression
 
