@@ -2,12 +2,23 @@
 
 labels = list()
 utterances = list()
-
+import nltk
+nltk.download('averaged_perceptron_tagger')
 with open("dialog_acts.dat", "r") as infile:
   for line in infile:
     label_utterance = line.lower().split(" ", 1)
     labels.append(label_utterance[0])
     utterances.append(label_utterance[1])
+    
+    
+    '''
+    tagged_sentence = nltk.pos_tag(label_utterance[1].split())
+    edited_sentence = [word for word,tag in tagged_sentence if tag != 'PRP' ]
+    if len(edited_sentence) >0:
+        labels.append(label_utterance[0])
+        utterances.append(' '.join(edited_sentence))
+
+    '''
 
 
 
@@ -17,12 +28,35 @@ from sklearn.model_selection import train_test_split
 
 X_train, X_test, y_train, y_test = train_test_split(utterances, labels, test_size=0.15)
 
+
+#convert list of duplicates into dict with k,v where k=label and v=count
+def Convert(lst): 
+    counts = {}
+    for i in lst:
+      counts[i] = counts.get(i, 0) + 1
+    return counts
+
+
+#get dict of words and freq
+words=[]
+for u in utterances:
+    words+=u.split()
+d=Convert(words)
+#creating word frequency dict
+from operator import itemgetter
+stop_words_list=sorted(d.items(), key=itemgetter(1))
+stop_words_list.reverse()
+
+
 ##vectorize training data
-import nltk
 from nltk.corpus import stopwords
 nltk.download('stopwords')
 from nltk.tokenize import word_tokenize
 
+
+
+
+    
 
 #creating bag of words representation
 from sklearn.feature_extraction.text import CountVectorizer
@@ -32,15 +66,19 @@ vectorizer = CountVectorizer()
 X_train_vectorized = vectorizer.fit_transform(X_train)
 X_test_vectorized=vectorizer.transform(X_test)
 
+
+title="Without Oversampling"
+'''
 #perform oversampling on dataset
 from imblearn.over_sampling import RandomOverSampler
 ros = RandomOverSampler(random_state=42 )
 X_train_vectorized, y_train = ros.fit_resample(X_train_vectorized, y_train)
-
+title="With Oversampling"
+'''
 #classifier logistic regression
 
 #taken from https://stackoverflow.com/questions/19233771/sklearn-plot-confusion-matrix-with-labels
-def plot_confusion_matrix(cm,target_names,y_predicted,title='Confusion matrix', cmap=None,normalize=False):
+def plot_confusion_matrix(cm,target_names,y_predicted,title, cmap=None,normalize=False):
     """
     given a sklearn confusion matrix (cm), make a nice plot
 
@@ -50,9 +88,8 @@ def plot_confusion_matrix(cm,target_names,y_predicted,title='Confusion matrix', 
 
     target_names: given classification classes such as [0, 1, 2]
                   the class names, for example: ['high', 'medium', 'low']
-
-    title:        the text to display at the top of the matrix
-
+    y_predicted:  what the classifier predicted
+    classifier_name: for the title of the plot
     cmap:         the gradient of the values displayed from matplotlib.pyplot.cm
                   see http://matplotlib.org/examples/color/colormaps_reference.html
                   plt.get_cmap('jet') or plt.cm.Blues
@@ -76,6 +113,7 @@ def plot_confusion_matrix(cm,target_names,y_predicted,title='Confusion matrix', 
     import matplotlib.pyplot as plt
     import numpy as np
     import itertools
+    
 
     accuracy = np.trace(cm) / float(np.sum(cm))
     misclass = 1 - accuracy
@@ -114,32 +152,16 @@ def plot_confusion_matrix(cm,target_names,y_predicted,title='Confusion matrix', 
     plt.xlabel('Predicted label\naccuracy={:0.4f}; misclass={:0.4f}\n{}'.format(accuracy, misclass,eval_metrics))
     plt.show()
 
-#convert list of duplicates into dict with k,v where k=label and v=count
-def Convert(lst): 
-    counts = {}
-    for i in lst:
-      counts[i] = counts.get(i, 0) + 1
-    return counts
-
-
-#get dict of words and freq
-words=[]
-for u in utterances:
-    words+=u.split()
-d=Convert(words)
-from operator import itemgetter
-dic=sorted(d.items(), key=itemgetter(1))
-dic.reverse()
 
 
 #plot confusion matrix and print label counts
-def make_confusion_matrix(y_predicted):
+def make_confusion_matrix(y_predicted, classifier_name):
     dictionary=Convert(y_test)
     #create confusion matrix and plot
     from sklearn.metrics import confusion_matrix
     labels_no_duplicates= list(dict.fromkeys(labels))
     cm=confusion_matrix(y_test,y_predicted, labels_no_duplicates)
-    plot_confusion_matrix(cm,labels_no_duplicates, y_predicted)
+    plot_confusion_matrix(cm,labels_no_duplicates, y_predicted, classifier_name)
     
 #get evaluation metrics
 def EvalMetrics(y_predicted):
@@ -160,14 +182,15 @@ def EvalMetrics(y_predicted):
     
 
 def TrainLogisticRegression():
-    from sklearn.linear_model import LogisticRegression
-    clf = LogisticRegression(random_state=0,solver='lbfgs', max_iter=200).fit(X_train_vectorized, np.reshape(y_train,(-1,1)))
     
+    from sklearn.linear_model import LogisticRegression
+    clf = LogisticRegression(random_state=0,solver='lbfgs', max_iter=200).fit(X_train_vectorized, np.reshape(y_train,(-1,1)))   
     
     y_pred=clf.predict(X_test_vectorized)
     accuracy=clf.score(X_test_vectorized,y_test)
     
-    make_confusion_matrix(y_pred)
+    make_confusion_matrix(y_pred, title+" Logistic Regression")
+    
     return clf
 
 def TrainNeuralNetwork():
@@ -177,7 +200,7 @@ def TrainNeuralNetwork():
             
     y_pred=clf.predict(X_test_vectorized)
     accuracy=clf.score(X_test_vectorized,y_test)
-    make_confusion_matrix(y_pred)
+    make_confusion_matrix(y_pred, title+' Neural Net')
     return clf
 
 def TrainSVM():
@@ -187,10 +210,11 @@ def TrainSVM():
     
     y_pred=clf.predict(X_test_vectorized)
     accuracy=clf.score(X_test_vectorized,y_test)
-    make_confusion_matrix(y_pred)
+    make_confusion_matrix(y_pred, title+' SVM')
     return clf
 #user input
 while True:
+    
     choice = input("enter 1 for logistic regression, 2 for NN classifier, 3 for SVM, stop to stop: ")
     if (choice == "1"):
         #classify user utterance
