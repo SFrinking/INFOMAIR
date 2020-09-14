@@ -94,6 +94,27 @@ def keyword_rule(phrase):
                         res = k
                         break
     return res
+
+#evaluate rule-based classification
+
+allcounter = 0
+truecounter = 0
+
+with open("dialog_acts.dat", "r") as infile:
+
+    for line in infile:
+        splitlst = line.lower().split(" ", 1)
+        res = keyword_rule(splitlst[1])
+        allcounter += 1
+        if res == splitlst[0]:
+            truecounter +=1
+            #outfile.write(splitlst[1] + ' ' + splitlst[0] + " TRUE\n" )
+        #else:
+        #    outfile.write(res + ' ' + splitlst[1] + splitlst[0] + " FALSE\n" )
+            
+acc = truecounter/allcounter
+print("accuracy keyword matching = {}".format(acc))
+
 while True:
     choice = input("press 1 for baseline, 2 for keyword matching:\n")
     if (choice == "1"):
