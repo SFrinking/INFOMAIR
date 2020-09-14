@@ -1,5 +1,7 @@
 ##import the data
 
+
+
 labels = list()
 utterances = list()
 import nltk
@@ -20,14 +22,11 @@ with open("dialog_acts.dat", "r") as infile:
 
     '''
 
-
-
 #split into train and test
 import numpy as np
 from sklearn.model_selection import train_test_split
-
+print("splitting data into training and test")
 X_train, X_test, y_train, y_test = train_test_split(utterances, labels, test_size=0.15)
-
 
 #convert list of duplicates into dict with k,v where k=label and v=count
 def Convert(lst): 
@@ -36,8 +35,8 @@ def Convert(lst):
       counts[i] = counts.get(i, 0) + 1
     return counts
 
-
-#get dict of words and freq
+'''
+#get dict of words and freq, potential use for stopwords removal
 words=[]
 for u in utterances:
     words+=u.split()
@@ -46,35 +45,47 @@ d=Convert(words)
 from operator import itemgetter
 stop_words_list=sorted(d.items(), key=itemgetter(1))
 stop_words_list.reverse()
+'''
 
-
+'''
 ##vectorize training data
 from nltk.corpus import stopwords
 nltk.download('stopwords')
 from nltk.tokenize import word_tokenize
-
-
-
-
-    
-
 #creating bag of words representation
-from sklearn.feature_extraction.text import CountVectorizer
-stop_words = set(stopwords.words('english')) 
-vectorizer = CountVectorizer()
 
+stop_words = set(stopwords.words('english')) 
+'''
+from sklearn.feature_extraction.text import CountVectorizer
+vectorizer = CountVectorizer()
+print("creating bag of words representation...")
 X_train_vectorized = vectorizer.fit_transform(X_train)
 X_test_vectorized=vectorizer.transform(X_test)
 
-
 title="Without Oversampling"
-'''
+def Reset():
+    global title
+    print("splitting data into training and test...")
+    X_train, X_test, y_train, y_test = train_test_split(utterances, labels, test_size=0.15)
+    print("creating bag of words representation...")
+    title="Without Oversampling"
+    X_train_vectorized = vectorizer.fit_transform(X_train)
+    X_test_vectorized=vectorizer.transform(X_test)
+    return X_train_vectorized, X_test_vectorized, y_train,y_test
+
+
+
 #perform oversampling on dataset
-from imblearn.over_sampling import RandomOverSampler
-ros = RandomOverSampler(random_state=42 )
-X_train_vectorized, y_train = ros.fit_resample(X_train_vectorized, y_train)
-title="With Oversampling"
-'''
+def OverSampling():
+    print('Performing oversampling...')
+    global X_train_vectorized
+    global y_train
+    global title
+    from imblearn.over_sampling import RandomOverSampler
+    ros = RandomOverSampler(random_state=42 )
+    X_train_vectorized, y_train = ros.fit_resample(X_train_vectorized, y_train)
+    title="With Oversampling"
+
 #classifier logistic regression
 
 #taken from https://stackoverflow.com/questions/19233771/sklearn-plot-confusion-matrix-with-labels
@@ -156,11 +167,14 @@ def plot_confusion_matrix(cm,target_names,y_predicted,title, cmap=None,normalize
 
 #plot confusion matrix and print label counts
 def make_confusion_matrix(y_predicted, classifier_name):
+    print("creating confusion matrix...")
     dictionary=Convert(y_test)
     #create confusion matrix and plot
     from sklearn.metrics import confusion_matrix
     labels_no_duplicates= list(dict.fromkeys(labels))
-    cm=confusion_matrix(y_test,y_predicted, labels_no_duplicates)
+
+    cm=confusion_matrix(y_test,y_predicted, labels=labels_no_duplicates)
+    
     plot_confusion_matrix(cm,labels_no_duplicates, y_predicted, classifier_name)
     
 #get evaluation metrics
@@ -182,10 +196,11 @@ def EvalMetrics(y_predicted):
     
 
 def TrainLogisticRegression():
-    
+    print('Training LR classifier...')
     from sklearn.linear_model import LogisticRegression
-    clf = LogisticRegression(random_state=0,solver='lbfgs', max_iter=200).fit(X_train_vectorized, np.reshape(y_train,(-1,1)))   
+    clf = LogisticRegression(random_state=0,solver='lbfgs', max_iter=200).fit(X_train_vectorized, np.ravel(np.reshape(y_train,(-1,1))))   
     
+    print("predicting test set...")
     y_pred=clf.predict(X_test_vectorized)
     accuracy=clf.score(X_test_vectorized,y_test)
     
@@ -194,33 +209,41 @@ def TrainLogisticRegression():
     return clf
 
 def TrainNeuralNetwork():
+    print('Training NN classifier...')
     from sklearn.neural_network import MLPClassifier
     clf = MLPClassifier(random_state=1, max_iter=200)
-    clf.fit(X_train_vectorized, np.reshape(y_train,(-1,1)))
-            
+    clf.fit(X_train_vectorized, np.ravel(np.reshape(y_train,(-1,1))))
+         
+    print("predicting test set...")
     y_pred=clf.predict(X_test_vectorized)
     accuracy=clf.score(X_test_vectorized,y_test)
     make_confusion_matrix(y_pred, title+' Neural Net')
     return clf
 
 def TrainSVM():
+    print('Training SVM classifier with balanced weights...')
     from sklearn import svm
     clf = svm.SVC(class_weight='balanced')
     clf.fit(X_train_vectorized, y_train)
     
+    print("predicting test set...")
     y_pred=clf.predict(X_test_vectorized)
     accuracy=clf.score(X_test_vectorized,y_test)
     make_confusion_matrix(y_pred, title+' SVM')
     return clf
+
 #user input
 while True:
-    
-    choice = input("enter 1 for logistic regression, 2 for NN classifier, 3 for SVM, stop to stop: ")
+    choice = input("Enter 1 for logistic regression, 2 for NN classifier, 3 for SVM, stop to stop: \nEnter 'oversampling' to enable random oversampling on the training set\nEnter 'reset' to split the data again\n")
+    if (choice=="oversampling"):
+        OverSampling()
+    if (choice=="reset"):
+        X_train_vectorized, X_test_vectorized,y_train,y_test=Reset()
     if (choice == "1"):
         #classify user utterance
         lr_clf=TrainLogisticRegression()
         while True:
-            var=input("enter utterance or enter stop to exit: ")
+            var=input("enter utterance or enter stop to choose another classifier:\n")
             if (var != "stop"):
                 x=vectorizer.transform([var])
                 y=lr_clf.predict(x)
@@ -230,7 +253,7 @@ while True:
     elif (choice=="2"):
         nn_clf=TrainNeuralNetwork()
         while True:
-            var=input("enter utterance or enter stop to exit: ")
+            var=input("enter utterance or enter stop to choose another classifier:\n")
             if (var != "stop"):
                 x=vectorizer.transform([var])
                 y=nn_clf.predict(x)
@@ -240,7 +263,7 @@ while True:
     elif (choice=="3"):
         nn_clf=TrainSVM()
         while True:
-            var=input("enter utterance or enter stop to exit: ")
+            var=input("enter utterance or enter stop to choose another classifier:\n")
             if (var != "stop"):
                 x=vectorizer.transform([var])
                 y=nn_clf.predict(x)
