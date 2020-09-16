@@ -118,23 +118,4 @@ def user_utterance(x):
     y_pred : string
         prediction.
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 ```
