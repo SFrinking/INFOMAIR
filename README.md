@@ -6,7 +6,7 @@ Current functionality is train and test classifier, classify user utterance.
 # Functions
 ```
 def open_dataset(filename):
-    """
+
     Parameters
     ----------
     filename : TYPE
@@ -19,14 +19,16 @@ def open_dataset(filename):
     labels : list
         y.
 
-    """
     
 def split_dataset(X,y):
     splits data using sklearn.model_selection train_test_split
+    
+    Returns
+    -------
+    X_train,X_test,y_train,y_test: list
 
 
 def convert_to_dict_freq(lst): 
-    """
 
     Parameters
     ----------
@@ -38,13 +40,18 @@ def convert_to_dict_freq(lst):
     counts_dictionary : dict
         k,v where k=label and v=frequency.
 
-    """
+
     
 def get_highest(dictionary):
+
     gets highest frequency based on values
+    Returns
+    -------
+    highest_label:str
+    highest_count:int
     
 def baseline_one(y_test, highest_label):
-    """
+
     given a list of labels, classify everything in y_test as that label
 
     Parameters
@@ -59,13 +66,16 @@ def baseline_one(y_test, highest_label):
     correct, incorrect: int
         how many occurrances correctly and incorrectly classified
 
-    """
     
 def get_key_words():
     rules for keyword matching
+    Returns
+    -------
+    keywords_m,keywords_ts,keywords_ds : list
+        list of labels and some keywords
     
 def keyword_rule(phrase):
-    """
+
     Given a phrase, predict the label based on key-word matching rules
 
     Parameters
@@ -78,10 +88,10 @@ def keyword_rule(phrase):
     y_pred : str
         prediction of this classifier.
 
-    """
+
 
 def baseline_two(X):
-    """
+
     predict X based on key-word matching rules
 
     Parameters
@@ -94,11 +104,9 @@ def baseline_two(X):
     correct, incorrect: int
         how many occurrances correctly and incorrectly classified
 
-    """
+
     
-def user_utterance(x):
-    """
-    
+def user_utterance(x):    
 
     Parameters
     ----------
@@ -110,7 +118,7 @@ def user_utterance(x):
     y_pred : string
         prediction.
 
-    """
+
 
 
 
