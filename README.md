@@ -122,6 +122,8 @@ def user_utterance(x):
 
 ```
 # classification.py
+
+Class to split data and train and test classifier.
 # Attributes classification.py
 ```
 X_train,X_test,y_train,y_test
