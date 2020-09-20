@@ -4,6 +4,12 @@ from classification import Classification
 
 agent_clf= Classification()
 X_train_vectorized, X_test_vectorized,y_train,y_test,vectorizer=agent_clf.initialize_data()
+
+
+welcome="Hello , welcome to the Cambridge restaurant system? You can ask for restaurants by area , price range or food type . How may I help you?"
+
+
+'''
 while True:
     choice = input("Enter 1 for logistic regression, 2 for NN classifier, 3 for SVM, stop to stop: \nEnter 'oversampling' to enable random oversampling on the training set\nEnter 'reset' to split the data again\n")
     if (choice=="oversampling"):
@@ -49,3 +55,4 @@ while True:
                 break
     elif(choice=="stop"):
         break
+'''
