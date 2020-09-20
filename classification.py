@@ -16,6 +16,7 @@ from sklearn import svm
 class Classification():
     
     def __init__(self):
+        
         self.X_train=[]
         self.X_test=[]
         self.y_train=[]

@@ -3,7 +3,22 @@
 Dialog State Agent created for the course 1-GS Methods in AI research (INFOMAIR) 2020-2021 at Utrecht University.
 Current functionality is train and test classifier, classify user utterance.
 
+# Attributes
+```
+X_train,X_test,y_train,y_test
+X_train_vectorized
+    sparse matrix
+X_test_vectorized
+    sparse matrix
+vectorizer
+    vectorizer trained on the training set, used transform user input into bag of words representation
+title
+    title of cm plot
+clf
+    classifier (Logistic Regression, Neural Network, Support Vector Machine)
+```
 # Functions Baseline.py
+
 ```
 def open_dataset(filename):
 
