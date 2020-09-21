@@ -123,7 +123,14 @@ def user_utterance(x):
 ```
 # classification.py
 
-Class to split data and train and test classifier.
+Class to split data and train and test classifier. 
+Usage: 
+1. initialize data using initialize_data()
+2. train and test classifier using one of the classifiers
+3. Test
+    a. Cross Validation
+    b. Test and make confusion matrix
+    c. Predict a sentence
 # Attributes classification.py
 ```
 X_train,X_test,y_train,y_test
@@ -140,6 +147,23 @@ clf
 ```
 # Functions classification.py
 ```
+
+ """
+ def stem_sentence(self, sentence):
+    Use SnowballStemmer from package nltk.stem.snowball to stem words and reduce word type in corpus
+
+    Parameters
+    ----------
+    sentence : str
+        sentence to be stemmed.
+
+    Returns
+    -------
+    str
+        sentence with all words stemmed.
+
+    """
+        
 def open_dataset(filename):
 
     Parameters

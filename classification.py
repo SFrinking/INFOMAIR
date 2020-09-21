@@ -73,6 +73,7 @@ class Classification():
         with open(filename, "r") as infile:
             for line in infile:
                 label_utterance = line.lower().split(" ", 1)
+                
                 labels.append(label_utterance[0])
                 
                 utterances.append(self.stem_sentence(label_utterance[1]))
@@ -338,15 +339,15 @@ class Classification():
     def predict(self, phrase):
         if phrase=="exit":
             return "exit"
-        X=self.vectorizer.transform([phrase])
-        return self.clf.predict(X)
+        X=self.vectorizer.transform([self.stem_sentence(phrase.lower())])
+        return self.clf.predict(X)[0]
         
         
     #%%
     def TrainLogisticRegression(self):
         print('Training LR classifier...')
         
-        self.clf = LogisticRegression(random_state=0,solver='saga', max_iter=200, penalty='l1')
+        self.clf = LogisticRegression(random_state=0, max_iter=200, penalty='l2')
         self.clf.fit(self.X_train_vectorized, np.ravel(np.reshape(self.y_train,(-1,1))))
         
     

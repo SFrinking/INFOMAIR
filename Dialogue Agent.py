@@ -7,63 +7,7 @@
 import nltk
 from nltk.tokenize import word_tokenize
 from classification import Classification
-
-# In[1]:
-
-
-
-
-
-keywords_m = {"request": ["where", "what", "whats", "type", "phone", "number",  #meaningful categories
-                        "address", "postcode", "post code"], 
-            "reqalts": ["how about", "what about", "anything else"],
-            "inform": ["restaurant", "food"],
-            "confirm": ["is it", "does it", "do they", "is there", "is that"]
-             }
-                
-    
-keywords_ts = {"repeat": ["repeat", "back", "again"],                   #turn-service categories
-            "ack": ["okay", "kay", "ok", "fine"],
-            "deny": ["wrong", "dont want", "not"],
-            "reqmore": ["more"],
-            "affirm": ["yes", "right", "correct", "yeah", "uh huh"],
-            "negate": ["no"]
-              }
-            
-keywords_ds = {"hello": ["hi", "hello"],                                #dialogue-service categories
-            "goodbye": ["goodbye", "good bye", "bye", "stop"],
-            "thankyou": ["thank", "thanks"],
-            "restart": ["start over", "reset", ],
-            "null": ["cough", "unintelligible", "tv_noise", "noise", 
-                     "sil", "sigh", "um"],
-               "exit": ["exit"]
-              }
-
-
-# In[2]:
-
-
-#classify user input
-#uses rule-based system, we should add ML classification as well
-
-def classification_rule_based(phrase):
-    res = "inform"
-    for key_dict in [keywords_m, keywords_ts, keywords_ds]:
-        #print(key_dict)
-        for k,v in key_dict.items():
-            #print(k)
-            #print(v)
-            for keyword in v:
-                if len(keyword.split(' ')) > 1:
-                    if keyword in phrase:
-                        res = k
-                        break
-                else:
-                    if keyword in word_tokenize(phrase):
-                        res = k
-                        break
-    return res
-
+import re
 #%%
     #initialize classification agent, then call prediction when necessary
 clf_agent=Classification()
@@ -71,10 +15,11 @@ clf_agent.initialize_data()
 #clf_agent.OverSampling()
 clf_agent.TrainLogisticRegression()
 def classification(phrase):
+    
     y_pred=clf_agent.predict(phrase)
     return y_pred
 
-# In[3]:
+# In[1]:
 
 
 # -- Cesar -- preparation for preference extraction
@@ -112,30 +57,44 @@ def stop_words_removal(s):
     return s
 
 
-# In[4]:
 
+#%%
+    
+def no_preference(user_ut, p):
+    """
+    check if user indicated no preference by using keyword matching
 
+    Parameters
+    ----------
+    user_ut : str
+        DESCRIPTION.
+    p : list
+        list of preferences.
+
+    Returns
+    -------
+    p : list
+        DESCRIPTION.
+
+    """
+    keywords=re.findall( "any\s(\w+)", user_ut.lower())
+    if ("area" in keywords):
+        p[0]='any'
+    if ("price" in keywords):
+        p[1]='any'
+    if ("food" in keywords):
+        p[2]='any'
+    return p
+
+# In[2]:
 # -- Cesar -- preference extraction
 
-def preference_extractor(user_ut,state):
-    #state= which question is our system asking? (area,price,food?)
+def preference_extractor(user_ut):
     p=[0 for i in range(3)] #the preferences are stored in a list of three elements, p[0] for the area, p[1] for the price range and p[2] for the food type
     s=stop_words_removal(user_ut)
+
+    p=no_preference(user_ut, p) #check if user indicated no preference
     
-    #keyword matching for 'any'
-    if 'any' in user_ut :
-        words_after_any=user_ut.split('any')[1].split(" ")
-    
-        words_after_any.remove('')
-        word_after_any=""
-        if (len(words_after_any)>0):
-            word_after_any=words_after_any[0]
-        if word_after_any == "area" or state=="area":
-            p[0]="any"
-        elif word_after_any == "price" or state=="price":
-            p[1]="any"
-        elif word_after_any == "food" or state=="food":
-            p[2]="any"
 #keyword matching for the area
     for i in s:
         for j in area:
@@ -180,8 +139,7 @@ def preference_extractor(user_ut,state):
             if k<=2:
                 p[0] = key_list[val_list.index(k)]
 
-    #print(p)
-#In case the price range has been mispelt
+    #In case the price range has been mispelt
     if (p[1] == 0):
         d = {}
         l=[]
@@ -212,7 +170,8 @@ def preference_extractor(user_ut,state):
             val_list = list(d.values())
             if k<=2:
                 p[1] = key_list[val_list.index(k)]
-#In case the  food type has been mispelt                #thresolds for Levenshtein distances might need to be better tuned for each preference
+    #In case the  food type has been mispelt                
+    #thresolds for Levenshtein distances might need to be better tuned for each preference
     if (p[2] == 0):
         d = {}
         l=[]
@@ -239,22 +198,8 @@ def preference_extractor(user_ut,state):
     return p
 
 
-# In[5]:
-
-
-#test sentences
-t1='I want a moderate priced north american restaurant in the centre'
-t2="let's try any restaurant near the centre"
-print(preference_extractor(t1,"none"))
-print(preference_extractor(t2,"none"))
-
-
-# In[6]:
-
-
+# %%
 # -- Ivan -- look for matches with preferences in the database
-
-
 
 def lookup(data):
 
@@ -290,9 +235,7 @@ def lookup(data):
     return res
 
 
-# In[20]:
-
-
+# %%
 # -- Ivan -- finite-state dialogue agent
 
 global statelog
@@ -300,13 +243,13 @@ statelog = list()
 res=[]
 def agree(userinput):
     
-    res = classification(userinput)
-    if res in ["ack", "affirm"]:
+    response = classification(userinput)
+    if response in ["ack", "affirm"]:
         return True
-    elif res in ["deny", "negate"]:
+    elif response in ["deny", "negate"]:
         return False
     else:
-        return res
+        return response
         
 
 def dialogue(userinput, state, rest_data):
@@ -315,54 +258,41 @@ def dialogue(userinput, state, rest_data):
     
     statelog.append([userinput,state])
     print("statelog: ",statelog)
-    print("restaurants:",res)
     if state == "exit":
         return
     if state in ("init", "hello"):
-        #userinput = userinput.lower()
-        #print(userinput)
         rest_data = [0,0,0]
-        
         userinput = input("Hello! I can recommend restaurants for you. To start, please enter your request. You can ask for restaurants by area, price range or food type. ")
-        #print(userinput)
         state = classification(userinput)
-        #return userinput, state
-        #print(0,userinput, state, rest_data)
         dialogue(userinput, state, rest_data)
         return
     
     if state == "inform":
-        
-        #print("enter inform state")
-        rest_data_mined = preference_extractor(userinput, "none")
+        rest_data_mined = preference_extractor(userinput)
         for i,d in enumerate(rest_data):
             if d == 0:
                 rest_data[i] = rest_data_mined[i]
         
         if rest_data[0] == 0:
             userinput = input("In which area would you like to find a restaurant? ")
-            rest_data_mined = preference_extractor(userinput, "area")
-            for i,d in enumerate(rest_data):
-                if d == 0:
-                    rest_data[i] = rest_data_mined[i]
             
             state = classification(userinput)
+            if "area" not in userinput:
+                userinput+=" area"
         elif rest_data[1] == 0:
             userinput = input("What is your desired price range? ")
-            rest_data_mined = preference_extractor(userinput,"price")
-            for i,d in enumerate(rest_data):
-                if d == 0:
-                    rest_data[i] = rest_data_mined[i]
+            
             state = classification(userinput)
+            if "price" not in userinput:
+                userinput+=" price"
         elif rest_data[2] == 0:
             userinput = input("What type of food do you prefer? ")
-            rest_data_mined = preference_extractor(userinput,"food")
-            for i,d in enumerate(rest_data):
-                if d == 0:
-                    rest_data[i] = rest_data_mined[i]
+            
             state = classification(userinput)
+            if "food" not in userinput:
+                userinput+=" food"
         else:
-            userinput = input("You are looking for a restaurant in area: {0}, price range: {1}, with {2} food, correct? ".format(rest_data[0],rest_data[1],rest_data[2]))
+            userinput = input("You are looking for a restaurant with the following preferences:\nArea: {0} \nPrice range: {1} \nwith {2} Food \nDid I get everything correctly? ".format(rest_data[0],rest_data[1],rest_data[2]))
             accept = agree(userinput)
             if accept is True:
                 state = "answer"
@@ -371,13 +301,12 @@ def dialogue(userinput, state, rest_data):
                 rest_data = [0,0,0]
             else:    
                 state = "accept"
+        print(userinput)
         #print(1,userinput, state, rest_data)
         dialogue(userinput, state, rest_data)
         return 
 
-    if state == "answer":
-        #print("enter answer state")
-        
+    if state == "answer": 
         res = lookup(rest_data)
         if res:      
             userinput = input("Okay, here is your recommendation: '{}'. Is it fine? ".format(res[0]))
@@ -428,7 +357,7 @@ def dialogue(userinput, state, rest_data):
         
 
 
-# In[22]:
+# %%
 
 
 if __name__ == "__main__":
