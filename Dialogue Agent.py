@@ -4,8 +4,12 @@
 # In[ ]:
 
 
+#imported librairies:
+import pandas as pd
+from Levenshtein import distance as dt
+from nltk.corpus import stopwords as s_w
+from nltk.tokenize import word_tokenize as w_t
 import nltk
-from nltk.tokenize import word_tokenize
 from classification import Classification
 import re
 import random
@@ -13,25 +17,16 @@ import random
     #initialize classification agent, then call prediction when necessary
 clf_agent=Classification()
 clf_agent.initialize_data()
-#clf_agent.OverSampling()
 clf_agent.TrainLogisticRegression()
 def classification(phrase):
-    
     y_pred=clf_agent.predict(phrase)
     return y_pred
 
-# In[1]:
-
-
+# %%
 # -- Cesar -- preparation for preference extraction
 #preparation 
 
-#imported librairies:
-import pandas as pd
-from Levenshtein import distance as dt
-import nltk
-from nltk.corpus import stopwords as s_w
-from nltk.tokenize import word_tokenize as w_t
+
 
 #reading the file
 file=pd.read_csv("restaurant_info.csv")
@@ -80,6 +75,8 @@ def no_preference(user_ut, p):
     """
     if "world food" in user_ut.lower():
         p[2]='any'
+    if "international food" in user_ut.lower():
+        p[2]='any'
     
     keywords=re.findall( "any\s(\w+)", user_ut.lower())
     if ("area" in keywords):
@@ -90,16 +87,30 @@ def no_preference(user_ut, p):
         p[2]='any'
     return p
 
-# In[2]:
+# %%
 # -- Cesar -- preference extraction
 
 def preference_extractor(user_ut):
+    """
+    Extract restaurant preference based on user utterance
+
+    Parameters
+    ----------
+    user_ut : str
+        user utterance.
+
+    Returns
+    -------
+    None.
+
+    """
+    
     p=[0 for i in range(3)] #the preferences are stored in a list of three elements, p[0] for the area, p[1] for the price range and p[2] for the food type
     s=stop_words_removal(user_ut)
 
     p=no_preference(user_ut, p) #check if user indicated no preference
     
-#keyword matching for the area
+    #keyword matching for the area
     for i in s:
         for j in area:
             if i == j:
@@ -107,12 +118,13 @@ def preference_extractor(user_ut):
     if(('north' and 'american' in s) and (s.count('north'))>1):
         p[0]=0
     #print(p)
-#keyword matching for the price range
+    #keyword matching for the price range
     for i in s:
         for j in price_range:
             if i == j:
                 p[1] = j
-#keyword matching for the food type
+                
+    #keyword matching for the food type
     for i in s:
         for j in food_types:
             if i == j:
@@ -124,7 +136,7 @@ def preference_extractor(user_ut):
             elif ('north' and 'american' in s):
                 p[2]='north american'
                 
-#In case the area has been mispelt
+    #In case the area has been mispelt
     if (p[0] == 0):
         d = {}
         l=[]
@@ -206,7 +218,20 @@ def preference_extractor(user_ut):
 # -- Ivan -- look for matches with preferences in the database
 
 def lookup(data):
+    """
+    Look for restaurants in database using user preferences
 
+    Parameters
+    ----------
+    data : list
+        list of preferences.
+
+    Returns
+    -------
+    res : list
+        list of restaurants.
+
+    """
     res = list()
 
     fit_area = set()
@@ -242,11 +267,21 @@ def lookup(data):
 # %%
 # -- Ivan -- finite-state dialogue agent
 
-global statelog
-statelog = list()
-res=[]
 def agree(userinput):
-    
+    """
+    check whether user agrees or denies
+
+    Parameters
+    ----------
+    userinput : str
+        DESCRIPTION.
+
+    Returns
+    -------
+    bool
+        true for agree, false for deny.
+
+    """
     response = classification(userinput)
     if response in ["ack", "affirm"]:
         return True
@@ -257,48 +292,66 @@ def agree(userinput):
         
     
 #%%
-
+#extra chatbot options
 responses={"Welcome": 
-    ["Hello! I can recommend restaurants to you. To start, please enter your request. You can ask for restaurants by area, price range, or food type",
-     "Hello and welcome to our restaurant system. You can ask for restaurants by area, price range, or food type. To start, please enter your request",
-     "Hello! You can ask for restaurants by area, price range, or food type. How may I help you? "],
+    ["Hello! I can recommend restaurants to you. To start, please enter your request. You can ask for restaurants by area, price range, or food type\n",
+     "Hello and welcome to our restaurant system. You can ask for restaurants by area, price range, or food type. To start, please enter your request\n",
+     "Hello! You can ask for restaurants by area, price range, or food type. How may I help you?\n"],
 
     "Area":
-        ['What part of town do you have in mind?'],
+        ['What part of town do you have in mind?\n'],
     'Price':
-        ['What is your desired price range? Cheap, moderate, or expensive?',
-         'Would you prefer a cheap, moderate, or expensive restaurant?'],
+        ['What is your desired price range? Cheap, moderate, or expensive?\n',
+         'Would you prefer a cheap, moderate, or expensive restaurant?\n'],
     'Food':
-        ["What kind of food would you like? ",
-        "What type of food do you prefer?" ],
+        ["What kind of food would you like? \n",
+        "What type of food do you prefer?\n" ],
     
     "AffirmPreferences":
-        ['So, you are looking for a restaurant in the {0}, with {1} price range, serving {2} food,  correct?'], 
+        ['So, you are looking for a restaurant in the {0}, with {1} price range, serving {2} food,  correct?\n'], 
     
     'Answer':
-        ["Okay, here is your recommendation: '{}'. Is it fine? ",
-        "I have found a nice restaurant matching your preferences: ‘{}’. Do you like it? ",
-        "I can recommend a good place that fits your criteria: ‘{}’. Is it fine? "],
+        ["Okay, here is your recommendation: '{}'. Is it fine? \n",
+        "I have found a nice restaurant matching your preferences: ‘{}’. Do you like it? \n",
+        "I can recommend a good place that fits your criteria: ‘{}’. Is it fine? \n"],
     
     "NoOptions":
-        ["Sorry, there are no recommendations matching your demands. Let’s try to search for another restaurant ",
-        "Unfortunately, I couldn’t find a restaurant that matches your expectations. Let’s try to find something else "],
+        ["Sorry, there are no recommendations matching your demands. Let’s try to search for another restaurant \n",
+        "Unfortunately, I couldn’t find a restaurant that matches your expectations. Let’s try to find something else \n"],
         
     'Goodbye':
-        ["Thank you for using our restaurant system. Come back! ",
-        "Thank you, I hope I was useful. Do come back! "]
+        ["Thank you for using our restaurant system. Come back! \n",
+        "Thank you, I hope I was useful. Do come back! \n"]
         }
 
 #%%
 
 def dialogue(userinput, state, rest_data):
+    """
+    recursively check state and jump to next state. 
+
+    Parameters
+    ----------
+    userinput : str
+        DESCRIPTION.
+    state : str
+        states as strings.
+    rest_data : list
+        restaurant preferences of user.
+
+    Returns
+    -------
+    None.
+
+    """
     global res
     userinput = userinput.lower()
+    statelog.append([userinput,state]) #tuple of user utterance and its associated state. We use this to keep track of state jumps.
+
     
-    statelog.append([userinput,state])
-    print("statelog: ",statelog)
     if state == "exit":
         return
+    
     if state in ("init", "hello"):
         rest_data = [0,0,0]
         userinput = input(random.choice(responses.get("Welcome")))
@@ -345,8 +398,6 @@ def dialogue(userinput, state, rest_data):
                 rest_data=[0,0,0]
             else:    
                 state = "accept"
-        print(userinput)
-        #print(1,userinput, state, rest_data)
         dialogue(userinput, state, rest_data)
         return 
 
@@ -365,7 +416,6 @@ def dialogue(userinput, state, rest_data):
             userinput = input(random.choice(responses.get("NoOptions")))
             rest_data = [0,0,0]
             state = classification(userinput)
-        #print(2,userinput, state, rest_data)
         dialogue(userinput, state, rest_data)
         return
         
@@ -387,11 +437,8 @@ def dialogue(userinput, state, rest_data):
             state = init
         dialogue(userinput, state, rest_data)
         return
-        #-1
     
-    
-    
-    #to do
+
     else:
         userinput = input("Please repeat")#statelog[len(statelog) + 1][0]
         state = statelog[len(statelog) - 2][1]
@@ -403,5 +450,9 @@ def dialogue(userinput, state, rest_data):
 
 
 # %%
+
+global statelog
+statelog = list()
+res=[] #list of restaurant recommendations
 if __name__ == "__main__":
     dialogue("", "init", [0,0,0])

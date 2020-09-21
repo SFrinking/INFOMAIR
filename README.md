@@ -3,7 +3,17 @@
 Dialog State Agent created for the course 1-GS Methods in AI research (INFOMAIR) 2020-2021 at Utrecht University.
 Current functionality is train and test classifier, classify user utterance.
 
+# Packages
+```
+Pandas
+python-Levenshtein
+NLTK
+re
+random
+Numpy
+SkLearn
 
+```
 # Functions Baseline.py
 
 ```

@@ -337,6 +337,20 @@ class Classification():
 
     #%%
     def predict(self, phrase):
+        """
+        stems and lower cases the phrase first, then vectorizes into bag of words representation. 
+
+        Parameters
+        ----------
+        phrase : str
+            DESCRIPTION.
+
+        Returns
+        -------
+        TYPE
+            DESCRIPTION.
+
+        """
         if phrase=="exit":
             return "exit"
         X=self.vectorizer.transform([self.stem_sentence(phrase.lower())])
