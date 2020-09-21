@@ -332,13 +332,22 @@ class Classification():
         print("predicting test set...")
         y_pred=self.clf.predict(self.X_test_vectorized)
         self.make_confusion_matrix(y_pred, self.title+" "+str(self.clf).split("(")[0])
+   
+
+    #%%
+    def predict(self, phrase):
+        if phrase=="exit":
+            return "exit"
+        X=self.vectorizer.transform([phrase])
+        return self.clf.predict(X)
+        
         
     #%%
     def TrainLogisticRegression(self):
         print('Training LR classifier...')
         
         self.clf = LogisticRegression(random_state=0,solver='saga', max_iter=200, penalty='l1')
-        self.clf.fit(self.X_train_vectorized, np.ravel(np.reshape(self.y_train,(-1,1))))  
+        self.clf.fit(self.X_train_vectorized, np.ravel(np.reshape(self.y_train,(-1,1))))
         
     
     #%%

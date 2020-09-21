@@ -6,7 +6,7 @@
 
 import nltk
 from nltk.tokenize import word_tokenize
-
+from classification import Classification
 
 # In[1]:
 
@@ -46,7 +46,7 @@ keywords_ds = {"hello": ["hi", "hello"],                                #dialogu
 #classify user input
 #uses rule-based system, we should add ML classification as well
 
-def classification(phrase):
+def classification_rule_based(phrase):
     res = "inform"
     for key_dict in [keywords_m, keywords_ts, keywords_ds]:
         #print(key_dict)
@@ -64,6 +64,15 @@ def classification(phrase):
                         break
     return res
 
+#%%
+    #initialize classification agent, then call prediction when necessary
+clf_agent=Classification()
+clf_agent.initialize_data()
+#clf_agent.OverSampling()
+clf_agent.TrainLogisticRegression()
+def classification(phrase):
+    y_pred=clf_agent.predict(phrase)
+    return y_pred
 
 # In[3]:
 
@@ -218,9 +227,10 @@ def preference_extractor(user_ut):
 
 
 #test sentences
-t1='I want a modera priced north american restaurant in the centre'
+t1='I want a moderate priced north american restaurant in the centre'
 t2="let's try any restaurant near the centre"
 print(preference_extractor(t1))
+print(preference_extractor(t2))
 
 
 # In[6]:
@@ -261,7 +271,7 @@ def lookup(data):
         for i in option_numbers:
             res.append(restaurant_names[i])
             
-    return res   
+    return res
 
 
 # In[20]:
@@ -271,7 +281,7 @@ def lookup(data):
 
 global statelog
 statelog = list()
-
+res=[]
 def agree(userinput):
     
     res = classification(userinput)
@@ -284,12 +294,14 @@ def agree(userinput):
         
 
 def dialogue(userinput, state, rest_data):
-    
+    global res
     userinput = userinput.lower()
     
     statelog.append([userinput,state])
-    print(statelog)
-    
+    print("statelog: ",statelog)
+    print("restaurants:",res)
+    if state == "exit":
+        return
     if state in ("init", "hello"):
         #userinput = userinput.lower()
         #print(userinput)
@@ -336,7 +348,7 @@ def dialogue(userinput, state, rest_data):
 
     if state == "answer":
         #print("enter answer state")
-        global res
+        
         res = lookup(rest_data)
         if res:      
             userinput = input("Okay, here is your recommendation: '{}'. Is it fine? ".format(res[0]))
@@ -369,13 +381,12 @@ def dialogue(userinput, state, rest_data):
             state = statelog[len(statelog) - 3][1]
         except IndexError:
             print("Nowhere to go back, starting again")
-            state = "init"
+            state = init
         dialogue(userinput, state, rest_data)
         return
         #-1
     
-    if state == "exit":
-        return
+    
     
     #to do
     else:
