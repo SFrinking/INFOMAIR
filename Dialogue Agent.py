@@ -103,7 +103,7 @@ post_code=list(file['postcode'])
 #function that removes stop words e.g Levenshtein_Distance("the",thai") too little
 def stop_words_removal(s):
     tk=w_t(s)
-    s=final_x=[i for i in tk if not i in (s_w.words('english'))]
+    s=[i for i in tk if not i in (s_w.words('english'))]
     s=" ".join(s)
     s = s.lower()
     #print(s)
@@ -117,9 +117,25 @@ def stop_words_removal(s):
 
 # -- Cesar -- preference extraction
 
-def preference_extractor(user_ut):
+def preference_extractor(user_ut,state):
+    #state= which question is our system asking? (area,price,food?)
     p=[0 for i in range(3)] #the preferences are stored in a list of three elements, p[0] for the area, p[1] for the price range and p[2] for the food type
     s=stop_words_removal(user_ut)
+    
+    #keyword matching for 'any'
+    if 'any' in user_ut :
+        words_after_any=user_ut.split('any')[1].split(" ")
+    
+        words_after_any.remove('')
+        word_after_any=""
+        if (len(words_after_any)>0):
+            word_after_any=words_after_any[0]
+        if word_after_any == "area" or state=="area":
+            p[0]="any"
+        elif word_after_any == "price" or state=="price":
+            p[1]="any"
+        elif word_after_any == "food" or state=="food":
+            p[2]="any"
 #keyword matching for the area
     for i in s:
         for j in area:
@@ -229,8 +245,8 @@ def preference_extractor(user_ut):
 #test sentences
 t1='I want a moderate priced north american restaurant in the centre'
 t2="let's try any restaurant near the centre"
-print(preference_extractor(t1))
-print(preference_extractor(t2))
+print(preference_extractor(t1,"none"))
+print(preference_extractor(t2,"none"))
 
 
 # In[6]:
@@ -318,19 +334,32 @@ def dialogue(userinput, state, rest_data):
     if state == "inform":
         
         #print("enter inform state")
-        rest_data_mined = preference_extractor(userinput)
+        rest_data_mined = preference_extractor(userinput, "none")
         for i,d in enumerate(rest_data):
             if d == 0:
                 rest_data[i] = rest_data_mined[i]
         
         if rest_data[0] == 0:
             userinput = input("In which area would you like to find a restaurant? ")
+            rest_data_mined = preference_extractor(userinput, "area")
+            for i,d in enumerate(rest_data):
+                if d == 0:
+                    rest_data[i] = rest_data_mined[i]
+            
             state = classification(userinput)
         elif rest_data[1] == 0:
             userinput = input("What is your desired price range? ")
+            rest_data_mined = preference_extractor(userinput,"price")
+            for i,d in enumerate(rest_data):
+                if d == 0:
+                    rest_data[i] = rest_data_mined[i]
             state = classification(userinput)
         elif rest_data[2] == 0:
             userinput = input("What type of food do you prefer? ")
+            rest_data_mined = preference_extractor(userinput,"food")
+            for i,d in enumerate(rest_data):
+                if d == 0:
+                    rest_data[i] = rest_data_mined[i]
             state = classification(userinput)
         else:
             userinput = input("You are looking for a restaurant in area: {0}, price range: {1}, with {2} food, correct? ".format(rest_data[0],rest_data[1],rest_data[2]))
