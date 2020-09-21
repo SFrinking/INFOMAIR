@@ -304,5 +304,20 @@ def TrainNeuralNetwork():
 def TrainSVM():
     train SVM classifier using training set
 
+"""
+def cv(self,clf,oversampling):
+    Use 10-fold cross validation to better estimate the evaluation scores of the classifier.
+    Random Oversampling set as extra option for the training set of each fold.
+
+    Parameters
+    ----------
+    clf : classifier
+        DESCRIPTION.
+    oversampling : bool
+        true=oversample training set, false=dont oversample.
+
+    Returns
+    -------
+    None.
 
 ```

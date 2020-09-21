@@ -12,11 +12,15 @@ from sklearn.metrics import recall_score
 from sklearn.neural_network import MLPClassifier
 from sklearn.linear_model import LogisticRegression
 from sklearn import svm
-    
+from sklearn.model_selection import cross_validate
+from sklearn.model_selection import KFold
 class Classification():
     
+    #%%
     def __init__(self):
         
+        self.X=[]
+        self.y=[]
         self.X_train=[]
         self.X_test=[]
         self.y_train=[]
@@ -26,6 +30,8 @@ class Classification():
         self.vectorizer=[]
         self.title=""
         self.clf=""
+        
+    #%%
     def stem_sentence(self, sentence):
         """
         Use SnowballStemmer from package nltk.stem.snowball to stem words and reduce word type in corpus
@@ -44,7 +50,7 @@ class Classification():
         stemmer=SnowballStemmer("english")
         stemmed= [stemmer.stem(x) for x in sentence.split()]
         return " ".join(stemmed)
-         
+    #%%
     def open_dataset(self,filename):
         """
         Parameters
@@ -73,14 +79,14 @@ class Classification():
             #print(utterances)
             return utterances,labels
     
-    
+    #%%
     def split_dataset(self,X,y):
         print("splitting dataset into train and test...")
         
         return train_test_split(X,y, test_size=0.15)
         
     
-    
+    #%%
     #convert list of duplicates into dict with k,v where k=label and v=count
     def Convert(self,lst): 
         counts = {}
@@ -90,7 +96,7 @@ class Classification():
     
     
     
-    
+    #%%
     def bag_of_words(self,X_train,X_test):
         """
         create bag of words representation by vectorizing input space. 
@@ -121,7 +127,7 @@ class Classification():
         
         return X_train_vectorized, X_test_vectorized, vectorizer
     
-    
+    #%%
     def initialize_data(self):
         """
         get data from file, split it and create bag of words representation
@@ -141,15 +147,15 @@ class Classification():
     
         """
         self.title="Without Oversampling"
-        X,y=self.open_dataset("dialog_acts.dat")
-        self.X_train, self.X_test, self.y_train, self.y_test = self.split_dataset(X,y)
+        self.X,self.y=self.open_dataset("dialog_acts.dat")
+        self.X_train, self.X_test, self.y_train, self.y_test = self.split_dataset(self.X,self.y)
         self.X_train_vectorized, self.X_test_vectorized,self.vectorizer=self.bag_of_words(self.X_train,self.X_test)
         
         return self.X_train_vectorized, self.X_test_vectorized, self.y_train,self.y_test,self.vectorizer
     
     
     
-    
+    #%%
     def OverSampling(self):
         """
         Perform random oversampling using imblearn.over_sampling. 
@@ -170,7 +176,7 @@ class Classification():
         self.X_train_vectorized, self.y_train=ros.fit_resample(self.X_train_vectorized, self.y_train)
         return self.X_train_vectorized, self.y_train
         
-    
+    #%%
     #taken from https://stackoverflow.com/questions/19233771/sklearn-plot-confusion-matrix-with-labels
     def plot_confusion_matrix(self,cm,target_names,y_predicted,title, cmap=None,normalize=False):
         """
@@ -245,7 +251,7 @@ class Classification():
         plt.show()
     
     
-    
+    #%%
     #plot confusion matrix and print label counts
     def make_confusion_matrix(self,y_predicted, classifier_name):
         """
@@ -272,7 +278,7 @@ class Classification():
         cm=confusion_matrix(self.y_test,y_predicted, labels=labels_no_duplicates)
         
         self.plot_confusion_matrix(cm,labels_no_duplicates, y_predicted, classifier_name)
-        
+    #%%   
     #get evaluation metrics
     def EvalMetrics(self,y_predicted,y_test):
         """
@@ -306,7 +312,7 @@ class Classification():
         return {'mi_recall':round(mi_recall,4), 'mi_precision':round(mi_precision,4), 'mi_f_score':round(mi_f_score,4),'ma_recall':round(ma_recall,4), 'ma_precision':round(ma_precision,4), 'ma_f_score':round(ma_f_score,4)}
         
     
-    
+    #%%
     def test_clf(self):
         """
         test the previously trained classifier and plot confusion matrix
@@ -327,7 +333,7 @@ class Classification():
         y_pred=self.clf.predict(self.X_test_vectorized)
         self.make_confusion_matrix(y_pred, self.title+" "+str(self.clf).split("(")[0])
         
-    
+    #%%
     def TrainLogisticRegression(self):
         print('Training LR classifier...')
         
@@ -335,19 +341,65 @@ class Classification():
         self.clf.fit(self.X_train_vectorized, np.ravel(np.reshape(self.y_train,(-1,1))))  
         
     
+    #%%
     def TrainNeuralNetwork(self):
         print('Training NN classifier...')
         
         self.clf = MLPClassifier(random_state=1, max_iter=200)
         self.clf.fit(self.X_train_vectorized, np.ravel(np.reshape(self.y_train,(-1,1))))  
         
-    
-    def TrainSVM(self):
-        print('Training SVM classifier with balanced weights...')
         
-        self.clf = svm.SVC(class_weight='balanced')
-        self.clf.fit(self.X_train_vectorized, np.ravel(np.reshape(self.y_train,(-1,1))))  
-        
+    #%%
+    def cv(self,clf,oversampling):
+        """
+        Use 10-fold cross validation to better estimate the evaluation scores of the classifier. 
+        Random Oversampling set as extra option for the training set of each fold.
 
+        Parameters
+        ----------
+        clf : classifier
+            DESCRIPTION.
+        oversampling : bool
+            true=oversample training set, false=dont oversample.
+
+        Returns
+        -------
+        None.
+
+        """
+        
+       
+        v=CountVectorizer()
+        X_vectorized=v.fit_transform(self.X)
+        
+        kf = KFold(n_splits=10)
+        
+        accuracy=[]
+        f1_macro=[]
+        f1_micro=[]
+        
+        for fold, (train_index, test_index) in enumerate(kf.split(self.X), 1):
+            print("fold ",fold)
+            X_train = X_vectorized[train_index]
+            y_train = np.ravel(np.reshape(self.y,(-1,1)))[train_index]  # Based on your code, you might need a ravel call here, but I would look into how you're generating your y
+            X_test = X_vectorized[test_index]
+            y_test = np.ravel(np.reshape(self.y,(-1,1)))[test_index]  # See comment on ravel and  y_train
+            if oversampling==True:
+                ros = RandomOverSampler(random_state=42 )
+                X_train,y_train=ros.fit_resample(X_train, y_train)
+                
+            
+            model =  clf# Choose a model here
+            model.fit(X_train, y_train)  
+            y_pred = model.predict(X_test)
+            accuracy.append(model.score(X_test, y_test))
+            f1_macro.append(f1_score(y_test, y_pred, average="macro"))
+            f1_micro.append(f1_score(y_test, y_pred, average="micro"))
+            
+            #print(f'For fold {fold}:')
+            #print(f"Accuracy: {model.score(X_test, y_test)}")
+            #print(f'f-score: {f1_score(y_test, y_pred, average="macro")}')
+        print("accuracy: ", sum(accuracy)/kf.n_splits,"f1_macro: ",sum(f1_macro)/kf.n_splits,"f1_micro: ",sum(f1_micro)/kf.n_splits )
+        
 
 
