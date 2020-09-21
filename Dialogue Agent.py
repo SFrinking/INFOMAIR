@@ -8,6 +8,7 @@ import nltk
 from nltk.tokenize import word_tokenize
 from classification import Classification
 import re
+import random
 #%%
     #initialize classification agent, then call prediction when necessary
 clf_agent=Classification()
@@ -77,6 +78,9 @@ def no_preference(user_ut, p):
         DESCRIPTION.
 
     """
+    if "world food" in user_ut.lower():
+        p[2]='any'
+    
     keywords=re.findall( "any\s(\w+)", user_ut.lower())
     if ("area" in keywords):
         p[0]='any'
@@ -251,6 +255,41 @@ def agree(userinput):
     else:
         return response
         
+    
+#%%
+
+responses={"Welcome": 
+    ["Hello! I can recommend restaurants to you. To start, please enter your request. You can ask for restaurants by area, price range, or food type",
+     "Hello and welcome to our restaurant system. You can ask for restaurants by area, price range, or food type. To start, please enter your request",
+     "Hello! You can ask for restaurants by area, price range, or food type. How may I help you? "],
+
+    "Area":
+        ['What part of town do you have in mind?'],
+    'Price':
+        ['What is your desired price range? Cheap, moderate, or expensive?',
+         'Would you prefer a cheap, moderate, or expensive restaurant?'],
+    'Food':
+        ["What kind of food would you like? ",
+        "What type of food do you prefer?" ],
+    
+    "AffirmPreferences":
+        ['So, you are looking for a restaurant in the {0}, with {1} price range, serving {2} food,  correct?'], 
+    
+    'Answer':
+        ["Okay, here is your recommendation: '{}'. Is it fine? ",
+        "I have found a nice restaurant matching your preferences: ‘{}’. Do you like it? ",
+        "I can recommend a good place that fits your criteria: ‘{}’. Is it fine? "],
+    
+    "NoOptions":
+        ["Sorry, there are no recommendations matching your demands. Let’s try to search for another restaurant ",
+        "Unfortunately, I couldn’t find a restaurant that matches your expectations. Let’s try to find something else "],
+        
+    'Goodbye':
+        ["Thank you for using our restaurant system. Come back! ",
+        "Thank you, I hope I was useful. Do come back! "]
+        }
+
+#%%
 
 def dialogue(userinput, state, rest_data):
     global res
@@ -262,43 +301,48 @@ def dialogue(userinput, state, rest_data):
         return
     if state in ("init", "hello"):
         rest_data = [0,0,0]
-        userinput = input("Hello! I can recommend restaurants for you. To start, please enter your request. You can ask for restaurants by area, price range or food type. ")
+        userinput = input(random.choice(responses.get("Welcome")))
         state = classification(userinput)
         dialogue(userinput, state, rest_data)
         return
     
-    if state == "inform":
+    
+        
+    if state in ("inform", "reqalts"):
         rest_data_mined = preference_extractor(userinput)
         for i,d in enumerate(rest_data):
             if d == 0:
                 rest_data[i] = rest_data_mined[i]
         
         if rest_data[0] == 0:
-            userinput = input("In which area would you like to find a restaurant? ")
+            userinput = input(random.choice(responses.get("Area")))
             
             state = classification(userinput)
             if "area" not in userinput:
                 userinput+=" area"
         elif rest_data[1] == 0:
-            userinput = input("What is your desired price range? ")
+            userinput = input(random.choice(responses.get("Price")))
             
             state = classification(userinput)
             if "price" not in userinput:
                 userinput+=" price"
         elif rest_data[2] == 0:
-            userinput = input("What type of food do you prefer? ")
+            userinput = input(random.choice(responses.get("Food")))
             
             state = classification(userinput)
             if "food" not in userinput:
                 userinput+=" food"
         else:
-            userinput = input("You are looking for a restaurant with the following preferences:\nArea: {0} \nPrice range: {1} \nwith {2} Food \nDid I get everything correctly? ".format(rest_data[0],rest_data[1],rest_data[2]))
+            userinput = input(random.choice(responses.get("AffirmPreferences")).format(rest_data[0],rest_data[1],rest_data[2]))
             accept = agree(userinput)
             if accept is True:
+                res = lookup(rest_data)
                 state = "answer"
             elif accept is False:
                 userinput = ""
                 rest_data = [0,0,0]
+            elif accept=="reqalts":
+                rest_data=[0,0,0]
             else:    
                 state = "accept"
         print(userinput)
@@ -307,28 +351,29 @@ def dialogue(userinput, state, rest_data):
         return 
 
     if state == "answer": 
-        res = lookup(rest_data)
         if res:      
-            userinput = input("Okay, here is your recommendation: '{}'. Is it fine? ".format(res[0]))
+            recommendation=random.choice(res)
+            res.remove(recommendation)
+            userinput = input(random.choice(responses.get("Answer")).format(recommendation))
             state = classification(userinput)
             if state in ["ack", "affirm"]:
                 state = "goodbye"
             elif state in ["reqalts", "reqmore", "deny", "negate"]:
-                res = res.pop()
+                
                 state = "answer"
         else:
-            userinput = input("Sorry, no recommendations matching your demands. Try to search for another restaurant ")
+            userinput = input(random.choice(responses.get("NoOptions")))
             rest_data = [0,0,0]
             state = classification(userinput)
         #print(2,userinput, state, rest_data)
         dialogue(userinput, state, rest_data)
         return
         
-    if state in ["thankyou", "goodbye", "reset"]:
+    if state in ["reqalts","thankyou", "goodbye", "reset"]:
         if state == "reset":
             print("Restarting the dialogue agent...")
         else:
-            print("Thank you for using our chatbot. Come back! ")
+            print(random.choice(responses.get("Goodbye")))
         state = "init"
         dialogue(userinput, state, rest_data)
         return
@@ -358,14 +403,5 @@ def dialogue(userinput, state, rest_data):
 
 
 # %%
-
-
 if __name__ == "__main__":
     dialogue("", "init", [0,0,0])
-
-
-# In[ ]:
-
-
-
-
