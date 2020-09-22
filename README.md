@@ -76,7 +76,7 @@ Usage:
     lr=LogisticRegression(random_state=0, max_iter=200, penalty='l2')
     clf.cv(lr,False)
 ```
-    c. Predict a sentence
+    c. Predict a single sentence
 ```python
     sentence="Hi, I would like to get a suggestion"
     clf.predict(sentence):
