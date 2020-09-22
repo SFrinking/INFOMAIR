@@ -3,6 +3,9 @@
 Dialog State Agent created for the course 1-GS Methods in AI research (INFOMAIR) 2020-2021 at Utrecht University.
 Current functionality is train and test classifier, classify user utterance.
 
+Run Dialogue_Agent.py for the text based chatbot for restaurant domain.
+classification.py contains functions to train and test classifiers.
+
 # Packages
 ```
 Pandas
@@ -158,7 +161,6 @@ clf
 # Functions classification.py
 ```
 
- """
  def stem_sentence(self, sentence):
     Use SnowballStemmer from package nltk.stem.snowball to stem words and reduce word type in corpus
 
@@ -335,10 +337,7 @@ def TrainLogisticRegression():
 def TrainNeuralNetwork():
     train NN classifier using training set
 
-def TrainSVM():
-    train SVM classifier using training set
 
-"""
 def cv(self,clf,oversampling):
     Use 10-fold cross validation to better estimate the evaluation scores of the classifier.
     Random Oversampling set as extra option for the training set of each fold.

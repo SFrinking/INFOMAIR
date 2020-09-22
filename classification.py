@@ -11,8 +11,6 @@ from sklearn.metrics import precision_score
 from sklearn.metrics import recall_score
 from sklearn.neural_network import MLPClassifier
 from sklearn.linear_model import LogisticRegression
-from sklearn import svm
-from sklearn.model_selection import cross_validate
 from sklearn.model_selection import KFold
 class Classification():
     
