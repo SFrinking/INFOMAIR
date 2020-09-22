@@ -62,22 +62,22 @@ Usage:
 ```
 3. train and test classifier using one of the classifiers (LR or NN)
 ```python
-    clf.train_lr()
+    clf.train_lr()#or
+    clf.train_nn()
 ```
 4. Testing and getting performance measures:
 
 Test and make confusion matrix
     
 ```python
-    clf.train_lr() #or
-    clf.train_nn()
+    clf.test_clf()
 ```
 
-Cross Validation. For this function, create a classifier and call the cv function
+Cross Validation. For this function, create a classifier and call the cv function. Second parameter for cv function is a boolean indicating whether or not to oversample.
     
 ```python
     lr=LogisticRegression(random_state=0, max_iter=200, penalty='l2')
-    clf.cv(lr,False)
+    clf.cv(lr,False) 
 ```
 
 Predict a single sentence
