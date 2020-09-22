@@ -60,23 +60,23 @@ Usage:
 ```python
     clf.initialize_data("dialog_acts.dat")
 ```
-2. train and test classifier using one of the classifiers (LR or NN)
+3. train and test classifier using one of the classifiers (LR or NN)
 ```python
     clf.train_lr()
 ```
-3. Testing and getting performance measures:
+4. Testing and getting performance measures:
 
-    a. Test and make confusion matrix
+    Test and make confusion matrix
 ```python
     clf.train_lr() #or
     clf.train_nn()
 ```
-    b. Cross Validation. For this function, create a classifier and call the cv function
+    Cross Validation. For this function, create a classifier and call the cv function
 ```python
     lr=LogisticRegression(random_state=0, max_iter=200, penalty='l2')
     clf.cv(lr,False)
 ```
-    c. Predict a single sentence
+    Predict a single sentence
 ```python
     sentence="Hi, I would like to get a suggestion"
     clf.predict(sentence):
