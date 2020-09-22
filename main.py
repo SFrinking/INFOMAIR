@@ -5,6 +5,14 @@ from sklearn.linear_model import LogisticRegression
 from sklearn.neural_network import MLPClassifier
 from baseline import Baseline
 
+clf=Classification()
+clf.initialize_data("dialog_acts.dat")
+clf.train_lr()
+lr=LogisticRegression(random_state=0, max_iter=200, penalty='l2')
+clf.cv(lr,False)
+
+
+'''
 b = Baseline()
 b.open_dataset("dialog_acts.dat")
 b.split_dataset()
@@ -15,6 +23,8 @@ b.test_keyword_rule()
 print(b.score())
 b.user_input()
 #part 1a
+'''
+
 '''
 clf_agent= Classification()
 clf=LogisticRegression(random_state=0,max_iter=200, penalty='l2') 
