@@ -72,12 +72,14 @@ Usage:
     clf.train_lr() #or
     clf.train_nn()
 ```
+
     Cross Validation. For this function, create a classifier and call the cv function
     
 ```python
     lr=LogisticRegression(random_state=0, max_iter=200, penalty='l2')
     clf.cv(lr,False)
 ```
+
     Predict a single sentence
     
 ```python
