@@ -21,20 +21,7 @@ SkLearn
 
 ``` python
     def open_dataset(filename):
-        """
-    
-        Parameters
-        ----------
-        filename : TYPE
-            DESCRIPTION.
-    
-        Returns
-        -------
-        utterances : list
-            X.
-        labels : list
-            y.
-    """
+        
         
     def split_dataset(X,y):
     """
