@@ -64,7 +64,8 @@ Usage:
 ```python
     clf.train_lr()
 ```
-3. Test
+3. Testing and getting performance measures:
+
     a. Test and make confusion matrix
 ```python
     clf.train_lr() #or
