@@ -3,9 +3,17 @@
 from classification import Classification
 from sklearn.linear_model import LogisticRegression
 from sklearn.neural_network import MLPClassifier
+from baseline import Baseline
 
-
-
+b = Baseline()
+b.open_dataset("dialog_acts.dat")
+b.split_dataset()
+b.get_highest_label()
+b.test_highest_label()
+print(b.score())
+b.test_keyword_rule()
+print(b.score())
+b.user_input()
 #part 1a
 '''
 clf_agent= Classification()
