@@ -16,11 +16,14 @@ random
 Numpy
 SkLearn
 
+
 ```
 # Baseline.py
 Implementation of 2 baselines:
 1. classify every utterance as majority class
 2. classify every utterance based on self-defined rules
+Score for both baselines is based on accuracy. To get the error, output 1-accuracy
+
 Example code:
 ``` python
     from baseline import Baseline
@@ -31,10 +34,20 @@ Example code:
     b.get_highest_label()
     b.test_highest_label()
     print(b.score())
+```
+To test the keyword rules, simply run the function:
+
+```python
     b.test_keyword_rule()
     print(b.score())
+```
+
+To classify user utterance, simply run the following command:
+```python
     b.user_input()
 ```
+
+
 # classification.py
 
 Class to split data and train and test classifier. 

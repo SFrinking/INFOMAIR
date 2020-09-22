@@ -12,17 +12,14 @@ from sklearn.metrics import recall_score
 from sklearn.neural_network import MLPClassifier
 from sklearn.linear_model import LogisticRegression
 from sklearn.model_selection import KFold
+
 class Classification():
     
     #%%
     def __init__(self):
         
-        self.X=[]
-        self.y=[]
-        self.X_train=[]
-        self.X_test=[]
-        self.y_train=[]
-        self.y_test=[]
+        self.X,self.y=[],[]
+        self.X_train, self.X_test, self.y_train, self.y_test= [],[],[],[]
         self.X_train_vectorized=[]
         self.X_test_vectorized=[]
         self.vectorizer=[]
