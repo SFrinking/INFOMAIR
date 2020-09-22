@@ -62,12 +62,13 @@ Usage:
 ```
 2. train and test classifier using one of the classifiers (LR or NN)
 ```python
-    clf.initialize_data("dialog_acts.dat")
+    clf.train_lr()
 ```
 3. Test
     a. Test and make confusion matrix
 ```python
-    clf.train_lr()
+    clf.train_lr() #or
+    clf.train_nn()
 ```
     b. Cross Validation. For this function, create a classifier and call the cv function
 ```python
