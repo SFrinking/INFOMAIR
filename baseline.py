@@ -8,6 +8,7 @@ class Baseline():
         self.X_train, self.X_test, self.y_train, self.y_test= [],[],[],[]
         self.highest_label=""
         self.correct, self.incorrect=0,0
+        
         self.KEYWORDS_M = {"request": ["where", "what", "whats", "type", "phone", "number",  #meaningful categories
                                 "address", "postcode", "post code"], 
                     "reqalts": ["how about", "what about", "anything else"],
@@ -31,6 +32,7 @@ class Baseline():
                     "null": ["cough", "unintelligible", "tv_noise", "noise", 
                              "sil", "sigh", "um"]
                       }
+        self.wrong_predictions=[]
 
     def open_dataset(self, filename):
         """
@@ -100,6 +102,10 @@ class Baseline():
             else:
                 self.incorrect+=1
                 
+    def get_wrong_predictions(self):
+        return self.wrong_predictions
+
+                
     def predict_highest_label_rule(self):
         return self.highest_label
     
@@ -147,6 +153,7 @@ class Baseline():
                 self.correct+=1
             else:
                 self.incorrect+=1
+                self.wrong_predictions.append((self.X[n],y_pred,self.y[n]))
         
           
             

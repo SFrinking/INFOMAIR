@@ -12,6 +12,9 @@ from sklearn.metrics import recall_score
 from sklearn.neural_network import MLPClassifier
 from sklearn.linear_model import LogisticRegression
 from sklearn.model_selection import KFold
+from sklearn.model_selection import GridSearchCV
+from sklearn.decomposition import TruncatedSVD
+from sklearn.preprocessing import StandardScaler
 
 class Classification():
     
@@ -25,7 +28,29 @@ class Classification():
         self.vectorizer=[]
         self.title=""
         self.clf=""
+        self.X_vectorized=[]
+        self.wrong_predictions=[]
         
+        
+        
+    #%%
+    def initialize_data(self,filename):
+        """
+        open dataset from file, split data and create bag of words representation
+
+        Parameters
+        ----------
+        filename : str
+            file name.
+
+
+        """
+        self.title="Without Oversampling"
+        self.open_dataset(filename)
+        self.split_dataset(self.X,self.y)
+        self.bag_of_words()
+       
+    
     #%%
     def stem_sentence(self, sentence):
         """
@@ -69,7 +94,8 @@ class Classification():
         with open(filename, "r") as infile:
             for line in infile:
                 label_and_utterance = line.lower().split(" ", 1)
-                X.append(self.stem_sentence(label_and_utterance[1])) #reduce vocab
+                #if (label_and_utterance[0]!="null"):
+                X.append(self.stem_sentence(label_and_utterance[1])) #reduce vocab by stemming
                 y.append(label_and_utterance[0])
             self.X,self.y=X,y
     
@@ -100,26 +126,10 @@ class Classification():
         self.vectorizer = CountVectorizer()
         self.X_train_vectorized = self.vectorizer.fit_transform(self.X_train)
         self.X_test_vectorized=self.vectorizer.transform(self.X_test)
+        
 
     
-    #%%
-    def initialize_data(self,filename):
-        """
-        open dataset from file, split data and create bag of words representation
-
-        Parameters
-        ----------
-        filename : str
-            file name.
-
-
-        """
-        self.title="Without Oversampling"
-        self.open_dataset(filename)
-        self.split_dataset(self.X,self.y)
-        self.bag_of_words()
-       
-    
+   
     #%%
     def OverSampling(self):
         """
@@ -264,27 +274,6 @@ class Classification():
         return {'mi_recall':round(mi_recall,4), 'mi_precision':round(mi_precision,4), 'mi_f_score':round(mi_f_score,4),'ma_recall':round(ma_recall,4), 'ma_precision':round(ma_precision,4), 'ma_f_score':round(ma_f_score,4)}
         
     
-    #%%
-    def test_clf(self):
-        """
-        Test the previously trained classifier and plot confusion matrix. Train the classifier first.
-    
-        Parameters
-        ----------
-        clf : classifier
-            trained classifier.
-        clfName : str
-            classifier name.
-    
-        Returns
-        -------
-        None.
-    
-        """
-        print("predicting test set...")
-        y_pred=self.clf.predict(self.X_test_vectorized)
-        self.make_confusion_matrix(y_pred, self.title+" "+str(self.clf).split("(")[0])
-   
 
     #%%
     def predict(self, x):
@@ -325,6 +314,37 @@ class Classification():
         self.clf.fit(self.X_train_vectorized, np.ravel(np.reshape(self.y_train,(-1,1))))  
         
         
+ #%%
+    def test_clf(self):
+        """
+        Test the previously trained classifier and plot confusion matrix. Train the classifier first.
+    
+        Parameters
+        ----------
+        clf : classifier
+            trained classifier.
+        clfName : str
+            classifier name.
+    
+        Returns
+        -------
+        None.
+    
+        """
+        print("predicting test set...")
+        y_pred=self.clf.predict(self.X_test_vectorized)
+        wrongly_predicted=self.vectorizer.inverse_transform(self.X_test_vectorized)
+        for i in range(len(y_pred)):
+            if y_pred[i]!=self.y_test[i]:
+                self.wrong_predictions.append((self.X_test[i],y_pred[i],self.y_test[i]))
+            
+        self.make_confusion_matrix(y_pred, self.title+" "+str(self.clf).split("(")[0])
+   
+
+#%%
+    def get_wrong_predictions(self):
+        return self.wrong_predictions
+
     #%%
     def cv(self,clf,oversampling):
         """
@@ -374,4 +394,35 @@ class Classification():
         print("accuracy: ", sum(accuracy)/kf.n_splits,"f1_macro: ",sum(f1_macro)/kf.n_splits,"f1_micro: ",sum(f1_micro)/kf.n_splits )
         
 
+    
+#%%
+    def prepare_gs(self):
+        from sklearn.decomposition import TruncatedSVD
+        v=CountVectorizer()
+        self.X_vectorized=v.fit_transform(self.X)
 
+        
+
+    #%%
+    def grid_search(self,clf,params):
+        """
+        use gridsearch to find best params. 
+
+        Parameters
+        ----------
+        clf : classifier
+            DESCRIPTION.
+        params : dictionary
+            DESCRIPTION.
+
+        Returns
+        -------
+        search : GridSearchCV
+            DESCRIPTION.
+
+        """
+        search = GridSearchCV(clf, params, cv=5)
+        
+        search.fit(self.X_vectorized, self.y)
+        return search
+        

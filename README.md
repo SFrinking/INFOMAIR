@@ -16,6 +16,7 @@ random
 Numpy
 SkLearn
 imblearn
+GridSearchCV
 
 
 ```
@@ -43,6 +44,12 @@ To test the keyword rules, simply run the function:
     print(b.score())
 ```
 
+To get the wrongly predicted sentences of the keyword_rule function:
+
+```python
+    print(b.get_wrong_predictions())
+```
+
 To classify user utterance, simply run the following command:
 ```python
     b.user_input()
@@ -68,10 +75,18 @@ Usage:
 ```
 4. Testing and getting performance measures:
 
-Test and make confusion matrix
+Test and make confusion matrix. Also saves the wrongly classified sentences in class variable.
     
 ```python
     clf.test_clf()
+```
+
+To get wrongly classified sentences, after testing:
+
+```python
+    wrong_preds=clf_agent.get_wrong_predictions()
+    print(wrong_preds)
+
 ```
 
 Cross Validation. For this function, create a classifier and call the cv function. Second parameter for cv function is a boolean indicating whether or not to oversample.
@@ -79,6 +94,23 @@ Cross Validation. For this function, create a classifier and call the cv functio
 ```python
     lr=LogisticRegression(random_state=0, max_iter=200, penalty='l2')
     clf.cv(lr,False) 
+```
+
+GridSearch:
+
+```python
+    clf_agent=Classification()
+    clf_agent.open_dataset("dialog_acts.dat")
+    clf=MLPClassifier()
+    clf_agent.prepare_gs()
+    params={'learning_rate':['constant'],
+            'learning_rate_init':[0.01,0.001,0.0001],
+             'solver' : ['adam'],
+             'hidden_layer_sizes':[(100,100,100)],
+             "max_iter":[100]
+             }
+    gs=clf_agent.grid_search(clf, params)
+    gs.cv_results_
 ```
 
 Predict a single sentence

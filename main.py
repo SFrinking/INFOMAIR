@@ -2,11 +2,42 @@
 
 from classification import Classification
 from sklearn.linear_model import LogisticRegression
-from sklearn.neural_network import MLPClassifier
 from baseline import Baseline
 from dialogue_agent import Dialogue_Agent
+from sklearn.neural_network import MLPClassifier
+from sklearn.decomposition import TruncatedSVD
 #da = Dialogue_Agent()
 
+clf_agent=Classification()
+#clf_agent.open_dataset("dialog_acts.dat")
+clf=MLPClassifier()
+
+clf_agent.initialize_data("dialog_acts.dat")
+clf_agent.train_lr()
+clf_agent.test_clf()
+print(len(clf_agent.get_wrong_predictions()))
+
+b = Baseline()
+b.open_dataset("dialog_acts.dat")
+b.split_dataset()
+b.test_keyword_rule()
+print(len(b.get_wrong_predictions()))
+
+'''
+clf_agent.prepare_gs()
+
+
+params={'learning_rate':['constant'],
+        'learning_rate_init':[0.0001],
+         'solver' : ['adam'],
+         'hidden_layer_sizes':[(100,100)],
+         "max_iter":[200],
+         "batch_size":[500,1000,1500]
+         }
+gs=clf_agent.grid_search(clf, params)
+gs.cv_results_
+'''
+"""
 d= { "cheap,goodfood":["busy"],
     "spanish":["longtime"], 
     'busy':['longtime','notromantic'], 
@@ -30,7 +61,7 @@ for knowledge in KB:
     
 KB=set(KB)
 
-
+"""
 '''
 b = Baseline()
 b.open_dataset("dialog_acts.dat")
