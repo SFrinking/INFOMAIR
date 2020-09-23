@@ -342,6 +342,7 @@ class Dialogue_Agent():
     
         
         if state == "exit":
+            print(random.choice(self.responses.get("Goodbye")))
             return
         
         if state in ("init", "hello"):
@@ -423,11 +424,11 @@ class Dialogue_Agent():
             if state == "reset":
                 print("Restarting the dialogue agent...")
             else:
-                print(random.choice(self.responses.get("Goodbye")))
-                user_input=input("Would you like to finish here or get another recommendations?")
+                user_input=input("Would you like to finish here?")
                 if (self.classification(user_input) in ("ack","affirm")):
                     state="exit"
                 else:
+
                     state="init"
                 
             self.dialogue(user_input, state, user_preferences)
