@@ -8,12 +8,12 @@ from dialogue_agent import Dialogue_Agent
 #da = Dialogue_Agent()
 
 d= { "cheap,goodfood":["busy"],
-    "spanish,cheap":["longtime"], 
+    "spanish":["longtime"], 
     'busy':['longtime','notromantic'], 
     'longtime':['notchildren', 'notromantic'],     
     }
 
-KB=[ "goodfood", "cheap"]
+KB=[ "goodfood", "spanish"]
 
 
 for knowledge in KB:
