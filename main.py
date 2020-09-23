@@ -4,12 +4,8 @@ from classification import Classification
 from sklearn.linear_model import LogisticRegression
 from sklearn.neural_network import MLPClassifier
 from baseline import Baseline
-
-clf=Classification()
-clf.initialize_data("dialog_acts.dat")
-clf.train_lr()
-clf.test_clf()
-
+from dialogue_agent import Dialogue_Agent
+da = Dialogue_Agent()
 
 '''
 b = Baseline()
