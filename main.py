@@ -5,7 +5,31 @@ from sklearn.linear_model import LogisticRegression
 from sklearn.neural_network import MLPClassifier
 from baseline import Baseline
 from dialogue_agent import Dialogue_Agent
-da = Dialogue_Agent()
+#da = Dialogue_Agent()
+
+d= { "cheap,goodfood":["busy"],
+    "spanish":["longtime"], 
+    'busy':['longtime','notromantic'], 
+    'longtime':['notchildren', 'notromantic'],     
+    }
+
+KB=[ "cheap", "goodfood"]
+
+
+for knowledge in KB:
+    for key,values in d.items():
+        if knowledge == key:
+            for v in values:
+                KB.append(v)
+        elif knowledge in key:
+            atoms=key.split(",")
+            print(atoms)
+            if (set(atoms) & set(KB)):
+                KB.extend(values)
+            
+    
+KB=set(KB)
+
 
 '''
 b = Baseline()

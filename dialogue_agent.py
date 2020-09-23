@@ -66,6 +66,12 @@ class Dialogue_Agent():
                 "Thank you, I hope I was useful. Do come back! \n"]
                 }
             
+        self.inference_rules={ "cheap,goodfood":["busy"],
+            "spanish":["longtime"], 
+            'busy':['longtime','notromantic'], 
+            'longtime':['notchildren', 'notromantic'],     
+            }
+            
         self.dialogue("", "init", [0,0,0])
     #%%
 
