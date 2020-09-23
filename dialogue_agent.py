@@ -92,13 +92,13 @@ class Dialogue_Agent():
     
     #%%
         
-    def no_preference(self,user_ut, p):
+    def no_preference(self,user_input, p):
         """
         check if user indicated no preference by using keyword matching
     
         Parameters
         ----------
-        user_ut : str
+        user_input : str
             DESCRIPTION.
         p : list
             list of preferences.
@@ -109,12 +109,12 @@ class Dialogue_Agent():
             DESCRIPTION.
     
         """
-        if "world food" in user_ut.lower():
+        if "world food" in user_input.lower():
             p[2]='any'
-        if "international food" in user_ut.lower():
+        if "international food" in user_input.lower():
             p[2]='any'
         
-        keywords=re.findall( "any\s(\w+)", user_ut.lower())
+        keywords=re.findall( "any\s(\w+)", user_input.lower())
         if ("area" in keywords):
             p[0]='any'
         if ("price" in keywords):
@@ -126,13 +126,13 @@ class Dialogue_Agent():
     # %%
     # -- Cesar -- preference extraction
     
-    def preference_extractor(self,user_ut):
+    def preference_extractor(self,user_input):
         """
         Extract restaurant preference based on user utterance
     
         Parameters
         ----------
-        user_ut : str
+        user_input : str
             user utterance.
     
         Returns
@@ -142,9 +142,9 @@ class Dialogue_Agent():
         """
         
         p=[0 for i in range(3)] #the preferences are stored in a list of three elements, p[0] for the area, p[1] for the price range and p[2] for the food type
-        s=self.stopwords_removal(user_ut)
+        s=self.stopwords_removal(user_input)
     
-        p=self.no_preference(user_ut, p) #check if user indicated no preference
+        p=self.no_preference(user_input, p) #check if user indicated no preference
         
         #keyword matching for the area
         for i in s:
