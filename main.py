@@ -8,12 +8,12 @@ from dialogue_agent import Dialogue_Agent
 #da = Dialogue_Agent()
 
 d= { "cheap,goodfood":["busy"],
-    "spanish":["longtime"], 
+    "spanish,cheap":["longtime"], 
     'busy':['longtime','notromantic'], 
     'longtime':['notchildren', 'notromantic'],     
     }
 
-KB=[ "cheap", "goodfood"]
+KB=[ "goodfood", "cheap"]
 
 
 for knowledge in KB:
@@ -24,7 +24,7 @@ for knowledge in KB:
         elif knowledge in key:
             atoms=key.split(",")
             print(atoms)
-            if (set(atoms) & set(KB)):
+            if (set(atoms) & set(KB) == set(atoms)):
                 KB.extend(values)
             
     
