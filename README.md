@@ -87,3 +87,28 @@ Predict a single sentence
     clf.predict(sentence):
 ```
 
+# dialogue_agent.py
+
+Class to build a dialog agent. Agent works with states, as depicted in the "state transition diagram.pdf" file.
+The dialogue agent initializes a classifier trained on dialog acts in part 1a and initializes the data from the database "restaurant_info.csv". 
+
+Basic usage: 
+
+```python
+    from dialogue_agent import Dialogue_Agent
+    da = Dialogue_Agent()
+```
+
+The dialog agent also keeps track of its states. These can be printed with: 
+
+```python
+    da.statelog
+```
+
+Some important methods for the dialog agent: 
+
+```python
+    da.preference_extractor(user_utterance)
+    da.dialogue(self, user_input, state, user_preferences) #recursive state transition function. In each state, the agent interacts with the user.
+    da.lookup(user_preferences) #find all restaurants matching user preferences.
+```

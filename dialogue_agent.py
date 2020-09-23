@@ -253,13 +253,13 @@ class Dialogue_Agent():
     # %%
     # -- Ivan -- look for matches with preferences in the database
     
-    def lookup(self,data):
+    def lookup(self,user_preferences):
         """
         Look for restaurants in database using user preferences
     
         Parameters
         ----------
-        data : list
+        user_preferences : list
             list of preferences.
     
         Returns
@@ -274,23 +274,23 @@ class Dialogue_Agent():
         fit_price = set()
         fit_food = set()
         
-        if data[0] == "any" or data[0] == 0:
+        if user_preferences[0] == "any" or user_preferences[0] == 0:
             fit_area = set(range(len(self.area)))
         else:
             for i,a in enumerate(self.area):
-                if a == data[0]:
+                if a == user_preferences[0]:
                     fit_area.add(i)
-        if data[1] == "any" or data[1] == 0:
+        if user_preferences[1] == "any" or user_preferences[1] == 0:
             fit_price = set(range(len(self.price_range)))
         else:
             for j,p in enumerate(self.price_range):
-                if p == data[1]:
+                if p == user_preferences[1]:
                     fit_price.add(j)
-        if data[2] == "any" or data[2] == 0:
+        if user_preferences[2] == "any" or user_preferences[2] == 0:
             fit_food = set(range(len(self.food_types)))
         else:
             for k,f in enumerate(self.food_types):
-                if f == data[2]:
+                if f == user_preferences[2]:
                     fit_food.add(k)
         option_numbers = fit_area.intersection(fit_price, fit_food)
         if option_numbers:
@@ -440,7 +440,7 @@ class Dialogue_Agent():
                 state = self.statelog[len(self.statelog) - 3][1]
             except IndexError:
                 print("Nowhere to go back, starting again")
-                state = init
+                state = "init"
             self.dialogue(user_input, state, user_preferences)
             return
         
