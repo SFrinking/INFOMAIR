@@ -96,38 +96,7 @@ class Dialogue_Agent():
     
     
     
-    #%%
-        
-    def no_preference(self,user_input, p):
-        """
-        check if user indicated no preference by using keyword matching
-    
-        Parameters
-        ----------
-        user_input : str
-            DESCRIPTION.
-        p : list
-            list of preferences.
-    
-        Returns
-        -------
-        p : list
-            DESCRIPTION.
-    
-        """
-        if "world food" in user_input.lower():
-            p[2]='any'
-        if "international food" in user_input.lower():
-            p[2]='any'
-        
-        keywords=re.findall( "any\s(\w+)", user_input.lower())
-        if ("area" in keywords):
-            p[0]='any'
-        if ("price" in keywords):
-            p[1]='any'
-        if ("food" in keywords):
-            p[2]='any'
-        return p
+   
     
     # %%
     # -- Cesar -- preference extraction
@@ -255,89 +224,40 @@ class Dialogue_Agent():
                     p[2] = key_list[val_list.index(k)]    
         return p
     
-    
-    # %%
-    # -- Ivan -- look for matches with preferences in the database
-    
-    def lookup(self,user_preferences):
-        """
-        Look for restaurants in database using user preferences
-    
-        Parameters
-        ----------
-        user_preferences : list
-            list of preferences.
-    
-        Returns
-        -------
-        res : list
-            list of restaurants.
-    
-        """
-        res = list()
-    
-        fit_area = set()
-        fit_price = set()
-        fit_food = set()
+     #%%
         
-        if user_preferences[0] == "any" or user_preferences[0] == 0:
-            fit_area = set(range(len(self.area)))
-        else:
-            for i,a in enumerate(self.area):
-                if a == user_preferences[0]:
-                    fit_area.add(i)
-        if user_preferences[1] == "any" or user_preferences[1] == 0:
-            fit_price = set(range(len(self.price_range)))
-        else:
-            for j,p in enumerate(self.price_range):
-                if p == user_preferences[1]:
-                    fit_price.add(j)
-        if user_preferences[2] == "any" or user_preferences[2] == 0:
-            fit_food = set(range(len(self.food_types)))
-        else:
-            for k,f in enumerate(self.food_types):
-                if f == user_preferences[2]:
-                    fit_food.add(k)
-        option_numbers = fit_area.intersection(fit_price, fit_food)
-        if option_numbers:
-            for i in option_numbers:
-                res.append(self.restaurant_names[i])
-                
-        return res
-    
-    
-    # %%
-    # -- Ivan -- finite-state dialogue agent
-    
-    def agree(self,user_input):
+    def no_preference(self,user_input, p):
         """
-        check whether user agrees or denies
+        check if user indicated no preference by using keyword matching
     
         Parameters
         ----------
         user_input : str
             DESCRIPTION.
+        p : list
+            list of preferences.
     
         Returns
         -------
-        bool
-            true for agree, false for deny.
+        p : list
+            DESCRIPTION.
     
         """
-        response = self.classification(user_input)
-        if response in ["ack", "affirm"]:
-            return True
-        elif response in ["deny", "negate"]:
-            return False
-        else:
-            return response
-
-    
-    #%%
-    def suggest_restaurant(self):
-        recommendation=random.choice(self.suggestions)
-        self.suggestions.remove(recommendation)
-        return input(random.choice(self.responses.get("Answer")).format(recommendation))
+        if "world food" in user_input.lower():
+            p[2]='any'
+        if "international food" in user_input.lower():
+            p[2]='any'
+        
+        keywords=re.findall( "any\s(\w+)", user_input.lower())
+        if ("area" in keywords):
+            p[0]='any'
+        if ("price" in keywords):
+            p[1]='any'
+        if ("food" in keywords):
+            p[2]='any'
+        return p
+ 
+ 
     
     #%%
     
@@ -457,9 +377,116 @@ class Dialogue_Agent():
             self.dialogue(user_input, state, user_preferences)
             return
             
+       #%%
+    def make_inferences(self,KB):
+        """
+        Add knowledge to knowledge base KB by making use of inference rules.
+
+        Parameters
+        ----------
+        KB : set
+            convert to list first.
+
+        Returns
+        -------
+        KB
+            as a set, to eliminate duplicates.
+
+        """
+        KB=list(KB)
+        for knowledge in KB:
+            for key,values in self.inference_rules.items():
+                if knowledge == key:
+                    for v in values:
+                        KB.append(v)
+                elif knowledge in key:
+                    atoms=key.split(",")
+                    print(atoms)
+                    if (set(atoms) & set(KB) == set(atoms)):
+                        KB.extend(values)
+        return set(KB)     
+    # %%
+    # -- Ivan -- finite-state dialogue agent
     
+    def agree(self,user_input):
+        """
+        check whether user agrees or denies
+    
+        Parameters
+        ----------
+        user_input : str
+            DESCRIPTION.
+    
+        Returns
+        -------
+        bool
+            true for agree, false for deny.
+    
+        """
+        response = self.classification(user_input)
+        if response in ["ack", "affirm"]:
+            return True
+        elif response in ["deny", "negate"]:
+            return False
+        else:
+            return response
+
+        #%%
+    def suggest_restaurant(self):
+        recommendation=random.choice(self.suggestions)
+        self.suggestions.remove(recommendation)
+        return input(random.choice(self.responses.get("Answer")).format(recommendation))
             
+       # %%
+    # -- Ivan -- look for matches with preferences in the database
     
+    def lookup(self,user_preferences):
+        """
+        Look for restaurants in database using user preferences
+    
+        Parameters
+        ----------
+        user_preferences : list
+            list of preferences.
+    
+        Returns
+        -------
+        res : list
+            list of restaurants.
+    
+        """
+        res = list()
+    
+        fit_area = set()
+        fit_price = set()
+        fit_food = set()
+        
+        if user_preferences[0] == "any" or user_preferences[0] == 0:
+            fit_area = set(range(len(self.area)))
+        else:
+            for i,a in enumerate(self.area):
+                if a == user_preferences[0]:
+                    fit_area.add(i)
+        if user_preferences[1] == "any" or user_preferences[1] == 0:
+            fit_price = set(range(len(self.price_range)))
+        else:
+            for j,p in enumerate(self.price_range):
+                if p == user_preferences[1]:
+                    fit_price.add(j)
+        if user_preferences[2] == "any" or user_preferences[2] == 0:
+            fit_food = set(range(len(self.food_types)))
+        else:
+            for k,f in enumerate(self.food_types):
+                if f == user_preferences[2]:
+                    fit_food.add(k)
+        option_numbers = fit_area.intersection(fit_price, fit_food)
+        if option_numbers:
+            for i in option_numbers:
+                res.append(self.restaurant_names[i])
+                
+        return res
+    
+
     
     # %%
     '''

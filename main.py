@@ -6,7 +6,8 @@ from baseline import Baseline
 from dialogue_agent import Dialogue_Agent
 from sklearn.neural_network import MLPClassifier
 from sklearn.decomposition import TruncatedSVD
-#da = Dialogue_Agent()
+da = Dialogue_Agent()
+
 
 clf_agent=Classification()
 #clf_agent.open_dataset("dialog_acts.dat")
@@ -15,13 +16,14 @@ clf=MLPClassifier()
 clf_agent.initialize_data("dialog_acts.dat")
 clf_agent.train_lr()
 clf_agent.test_clf()
-print(len(clf_agent.get_wrong_predictions()))
-
+print(clf_agent.get_wrong_predictions())
+'''
 b = Baseline()
 b.open_dataset("dialog_acts.dat")
 b.split_dataset()
 b.test_keyword_rule()
 print(len(b.get_wrong_predictions()))
+'''
 
 '''
 clf_agent.prepare_gs()
@@ -37,31 +39,29 @@ params={'learning_rate':['constant'],
 gs=clf_agent.grid_search(clf, params)
 gs.cv_results_
 '''
-"""
-d= { "cheap,goodfood":["busy"],
-    "spanish":["longtime"], 
-    'busy':['longtime','notromantic'], 
-    'longtime':['notchildren', 'notromantic'],     
-    }
 
-KB=[ "goodfood", "spanish"]
+'''
+d= da.inference_rules
 
+KB={ "goodfood", "spanish"}
 
-for knowledge in KB:
-    for key,values in d.items():
-        if knowledge == key:
-            for v in values:
-                KB.append(v)
-        elif knowledge in key:
-            atoms=key.split(",")
-            print(atoms)
-            if (set(atoms) & set(KB) == set(atoms)):
-                KB.extend(values)
-            
+def make_inferences(KB):
+    KB=list(KB)
+    for knowledge in KB:
+        for key,values in d.items():
+            if knowledge == key:
+                for v in values:
+                    KB.append(v)
+            elif knowledge in key:
+                atoms=key.split(",")
+                print(atoms)
+                if (set(atoms) & set(KB) == set(atoms)):
+                    KB.extend(values)
+    return set(KB)        
     
-KB=set(KB)
+print(make_inferences(KB))
+'''
 
-"""
 '''
 b = Baseline()
 b.open_dataset("dialog_acts.dat")
