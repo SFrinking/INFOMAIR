@@ -258,12 +258,23 @@ class Dialogue_Agent():
         return p
  
  
-    
+    #%%
+    def grounding(self, user_preferences):
+        #the preferences are stored in a list of three elements, p[0] for the area, p[1] for the price range and p[2] for the food type
+        answer_template= "So you would like me to find a restaurant "
+        p=user_preferences
+        if p[0]:
+            answer_template+="in the {} of town ".format(p[0])
+        if p[1]:
+            answer_template+="priced {}ly ".format(p[1])
+        if p[2]:
+            answer_template+="serving {} cuisine ".format(p[2])
+        return answer_template.rstrip()+". "
+        
     #%%
     
     def dialogue(self, user_input, state, user_preferences):
         
-       
         self.statelog.append([user_input,state]) #tuple of user utterance and its associated state. We use this to keep track of state jumps.
     
         
@@ -284,29 +295,30 @@ class Dialogue_Agent():
             for i,d in enumerate(user_preferences):
                 if d == 0:
                     user_preferences[i] = extracted_preferences[i]
-            state="fill_blanks"
+            state="fill_blanks" #if more slots to be filled
             self.suggestions=self.lookup(user_preferences)
             if (len(self.suggestions)==0) or (len(self.suggestions)==1):
-                state="answer"
+                state="answer" #if there is none or 1 restaurant to suggest
             self.dialogue(user_input, state, user_preferences)
             return 
     
     
         if state == "fill_blanks": #fills in preferences if there is a blank area
+            grounding=self.grounding(user_preferences)
             if user_preferences[0] == 0:
-                user_input = input(random.choice(self.responses.get("Area")))
+                user_input = input(grounding+random.choice(self.responses.get("Area")))
                 
                 state = self.classification(user_input)
                 if "area" not in user_input:
                     user_input+=" area"
             elif user_preferences[1] == 0:
-                user_input = input(random.choice(self.responses.get("Price")))
+                user_input = input(grounding+random.choice(self.responses.get("Price")))
                 
                 state = self.classification(user_input)
                 if "price" not in user_input:
                     user_input+=" price"
             elif user_preferences[2] == 0:
-                user_input = input(random.choice(self.responses.get("Food")))
+                user_input = input(grounding+random.choice(self.responses.get("Food")))
                 
                 state = self.classification(user_input)
                 if "food" not in user_input:
@@ -329,8 +341,9 @@ class Dialogue_Agent():
         
         
         if state == "answer": 
-            if self.suggestions:      
-                user_input=self.suggest_restaurant()
+            if self.suggestions:  
+                
+                user_input=input(self.suggest_restaurant())
                 state = self.classification(user_input)
                 
                 if state in ["ack", "affirm"]:
@@ -350,11 +363,10 @@ class Dialogue_Agent():
             if state == "reset":
                 print("Restarting the dialogue agent...")
             else:
-                user_input=input("Would you like to finish here?")
+                user_input=input(self.get_restaurant_info(self.recommendation)+". Would you like to finish here?")
                 if (self.classification(user_input) in ("ack","affirm")):
                     state="exit"
                 else:
-
                     state="init"
                 
             self.dialogue(user_input, state, user_preferences)
@@ -377,6 +389,14 @@ class Dialogue_Agent():
             self.dialogue(user_input, state, user_preferences)
             return
             
+        
+    #%%
+    def get_restaurant_info(self,recommendation):
+        i=self.restaurant_names.index(recommendation)#get index of recommendation
+        phone=self.phone[i]
+        address=self.address[i]
+        return "Alright, here are the contacts: {}, {}".format(phone,address)
+        
        #%%
     def make_inferences(self,KB):
         """
@@ -433,9 +453,9 @@ class Dialogue_Agent():
 
         #%%
     def suggest_restaurant(self):
-        recommendation=random.choice(self.suggestions)
-        self.suggestions.remove(recommendation)
-        return input(random.choice(self.responses.get("Answer")).format(recommendation))
+        self.recommendation=random.choice(self.suggestions)
+        self.suggestions.remove(self.recommendation)
+        return random.choice(self.responses.get("Answer")).format(self.recommendation)
             
        # %%
     # -- Ivan -- look for matches with preferences in the database

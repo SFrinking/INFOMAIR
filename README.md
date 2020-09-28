@@ -68,7 +68,7 @@ Usage:
 ```python
     clf.initialize_data("dialog_acts.dat")
 ```
-3. train and test classifier using one of the classifiers (LR or NN)
+3. train classifier using one of the classifiers (LR or NN)
 ```python
     clf.train_lr()#or
     clf.train_nn()
@@ -99,6 +99,9 @@ Cross Validation. For this function, create a classifier and call the cv functio
 GridSearch:
 
 ```python
+    clf_agent=Classification()
+    clf_agent.open_dataset("dialog_acts.dat")
+    clf=MLPClassifier()
     clf_agent=Classification()
     clf_agent.open_dataset("dialog_acts.dat")
     clf=MLPClassifier()

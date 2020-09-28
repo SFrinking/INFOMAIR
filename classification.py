@@ -89,15 +89,14 @@ class Classification():
         print('getting data from file '+filename+"...")
         X = list()
         y = list()
-        
-        
+        Xy=set()
         with open(filename, "r") as infile:
             for line in infile:
                 label_and_utterance = line.lower().split(" ", 1)
-                if (label_and_utterance[0]!="null"):
-                    X.append(self.stem_sentence(label_and_utterance[1])) #reduce vocab by stemming
-                    y.append(label_and_utterance[0])
-            self.X,self.y=X,y
+
+                X.append(self.stem_sentence(label_and_utterance[1])) #reduce vocab by stemming
+                y.append(label_and_utterance[0])
+        self.X,self.y=X,y
     
     #%%
     def split_dataset(self,X,y):
@@ -131,17 +130,18 @@ class Classification():
     
    
     #%%
-    def OverSampling(self):
+    def oversampling(self):
         """
         Perform oversampling on training set. 
 
         """
         print('Performing oversampling...')
         
-        ros = RandomOverSampler(random_state=42 )
+        d={'reqalts': 3000, 'affirm': 3000, 'thankyou': 3000, 'repeat': 3000, 'negate':3000, 'bye': 3000, 'confirm': 3000, 'hello': 3000, 'ack': 3000, 'deny':3000, 'restart':3000, 'reqmore':3000}
+        
+        ros = RandomOverSampler(random_state=42 , sampling_strategy=d)
         self.title="With Oversampling"
         self.X_train_vectorized, self.y_train=ros.fit_resample(self.X_train_vectorized, self.y_train)
-        
         
 #%%
     #plot confusion matrix and print label counts
@@ -333,7 +333,6 @@ class Classification():
         """
         print("predicting test set...")
         y_pred=self.clf.predict(self.X_test_vectorized)
-        wrongly_predicted=self.vectorizer.inverse_transform(self.X_test_vectorized)
         for i in range(len(y_pred)):
             if y_pred[i]!=self.y_test[i]:
                 self.wrong_predictions.append((self.X_test[i],y_pred[i],self.y_test[i]))

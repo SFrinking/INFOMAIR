@@ -50,8 +50,9 @@ class Baseline():
         with open(filename, "r") as infile:
             for line in infile:
                 label_and_utterance = line.lower().split(" ", 1)
-                X.append(label_and_utterance[1])
-                y.append(label_and_utterance[0])
+                if label_and_utterance[0]!="null":
+                    X.append(label_and_utterance[1])
+                    y.append(label_and_utterance[0])
                 
             self.X=X
             self.y=y

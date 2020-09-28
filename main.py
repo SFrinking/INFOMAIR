@@ -6,39 +6,53 @@ from baseline import Baseline
 from dialogue_agent import Dialogue_Agent
 from sklearn.neural_network import MLPClassifier
 from sklearn.decomposition import TruncatedSVD
-da = Dialogue_Agent()
+#da = Dialogue_Agent()
 
 
 clf_agent=Classification()
-#clf_agent.open_dataset("dialog_acts.dat")
-clf=MLPClassifier()
 
+clf_agent.open_dataset("dialog_acts.dat")
+
+clf=MLPClassifier()
+'''
 clf_agent.initialize_data("dialog_acts.dat")
+#clf_agent.oversampling()
 clf_agent.train_lr()
 clf_agent.test_clf()
-print(clf_agent.get_wrong_predictions())
-'''
+wrong_preds=clf_agent.get_wrong_predictions()
+
+
+
 b = Baseline()
 b.open_dataset("dialog_acts.dat")
 b.split_dataset()
 b.test_keyword_rule()
-print(len(b.get_wrong_predictions()))
+wrong_pred_baseline=b.get_wrong_predictions()
+
+def make_dict(wrong_preds):
+    d={}
+    for x, y_pred, y in wrong_preds:
+        if (y_pred, y) in d.keys():
+            d[(y_pred, y)]+=1
+        else:
+            d[(y_pred, y)]=1
+    return d
+w=make_dict(wrong_pred_baseline)
 '''
 
-'''
 clf_agent.prepare_gs()
 
 
 params={'learning_rate':['constant'],
-        'learning_rate_init':[0.0001],
+        'learning_rate_init':[0.001],
          'solver' : ['adam'],
-         'hidden_layer_sizes':[(100,100)],
+         'hidden_layer_sizes':[(50),(50,50),(100),(100,100)],
          "max_iter":[200],
-         "batch_size":[500,1000,1500]
+         "batch_size":[500]
          }
 gs=clf_agent.grid_search(clf, params)
 gs.cv_results_
-'''
+
 
 '''
 d= da.inference_rules
