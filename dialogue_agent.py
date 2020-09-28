@@ -453,9 +453,14 @@ class Dialogue_Agent():
 
         #%%
     def suggest_restaurant(self):
+        answer=""
+        if len(self.suggestions)==1:
+            answer="I could only find one option for you: {}. Is this fine?"
+        else:
+            random.choice(answer=self.responses.get("Answer"))
         self.recommendation=random.choice(self.suggestions)
         self.suggestions.remove(self.recommendation)
-        return random.choice(self.responses.get("Answer")).format(self.recommendation)
+        return answer.format(self.recommendation)
             
        # %%
     # -- Ivan -- look for matches with preferences in the database
