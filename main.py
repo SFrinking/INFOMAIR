@@ -6,14 +6,19 @@ from baseline import Baseline
 from dialogue_agent import Dialogue_Agent
 from sklearn.neural_network import MLPClassifier
 from sklearn.decomposition import TruncatedSVD
-#da = Dialogue_Agent()
+da = Dialogue_Agent()
 
 
+#alternatives(S_test2)
+#alternatives(S_test3)
+
+'''
 clf_agent=Classification()
 
 clf_agent.open_dataset("dialog_acts.dat")
 
 clf=MLPClassifier()
+'''
 '''
 clf_agent.initialize_data("dialog_acts.dat")
 #clf_agent.oversampling()
@@ -39,7 +44,7 @@ def make_dict(wrong_preds):
     return d
 w=make_dict(wrong_pred_baseline)
 '''
-
+'''
 clf_agent.prepare_gs()
 
 
@@ -52,28 +57,16 @@ params={'learning_rate':['constant'],
          }
 gs=clf_agent.grid_search(clf, params)
 gs.cv_results_
-
+'''
 
 '''
 d= da.inference_rules
 
-KB={ "goodfood", "spanish"}
+KB={ "open kitchen","bad hygiene" }
 
-def make_inferences(KB):
-    KB=list(KB)
-    for knowledge in KB:
-        for key,values in d.items():
-            if knowledge == key:
-                for v in values:
-                    KB.append(v)
-            elif knowledge in key:
-                atoms=key.split(",")
-                print(atoms)
-                if (set(atoms) & set(KB) == set(atoms)):
-                    KB.extend(values)
-    return set(KB)        
+     
     
-print(make_inferences(KB))
+print(da.make_inferences(KB))
 '''
 
 '''
