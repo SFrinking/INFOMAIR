@@ -147,4 +147,8 @@ Some important methods for the dialog agent:
     da.preference_extractor(user_utterance)
     da.dialogue(self, user_input, state, user_preferences) #recursive state transition function. In each state, the agent interacts with the user.
     da.lookup(user_preferences) #find all restaurants matching user preferences.
+    alternative_preferences=da.alternative_preferences(self,user_preferences) #used if no restaurants. Get alternative preferences based on set membership to find additional restaurants.
+    da.get_alternative_restaurants(self,alternative_preferences) #get all alternative restaurants using the alternative preferences.
+    da.ask_extra_preferences(self,user_preferences) #ask user for additional preferences, suggest restaurant and give reason why restaurant was suggested.
+    da.make_inferences(self,KB) #given a knowledge base, infer new knowledge based on self defined inference rules.
 ```
