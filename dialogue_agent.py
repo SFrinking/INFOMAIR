@@ -17,14 +17,29 @@ import random
 #%%
 class Dialogue_Agent():
     
-    def __init__(self):
+    def __init__(self,dialog_acts_filename, restaurant_matrix_filename):
+        """
+        initialize the dialog agent
+
+        Parameters
+        ----------
+        dialog_acts_filename : str
+            filename of dialog acts. Dialog acts should be in format of [label utterance] with whitespace as separator.
+        restaurant_matrix_filename : str
+            csv file containing restaurants, their contacts and information.
+
+        Returns
+        -------
+        None.
+
+        """
         self.statelog=[]
         
         self.clf_agent= Classification()
-        self.clf_agent.initialize_data("dialog_acts.dat")
+        self.clf_agent.initialize_data(dialog_acts_filename)
         self.clf_agent.train_lr()
         # -- Cesar -- preparation for preference extraction
-        file=pd.read_csv("restaurant_info.csv")
+        file=pd.read_csv(restaurant_matrix_filename)
         
         #extracting columns
         self.restaurant_names=list(file['restaurantname'])
@@ -626,12 +641,13 @@ class Dialogue_Agent():
         return user_requirements
     #%%
     def get_restaurant_info(self, restaurant_name):
-        
+        #return the restaurant information given a restaurant_name
         index=self.restaurant_names.index(restaurant_name)
         
         return "Restaurant '{}' serving {} food in {} part of town for {} price".format(restaurant_name.capitalize(),self.food_types[index], self.area[index], self.price_range[index])
     #%%
     def get_restaurant_contacts(self,recommendation):
+        #return the restaurant contact information
         i=self.restaurant_names.index(recommendation)#get index of recommendation
         phone=self.phone[i]
         address=self.address[i]
