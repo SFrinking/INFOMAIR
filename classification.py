@@ -13,8 +13,7 @@ from sklearn.neural_network import MLPClassifier
 from sklearn.linear_model import LogisticRegression
 from sklearn.model_selection import KFold
 from sklearn.model_selection import GridSearchCV
-from sklearn.decomposition import TruncatedSVD
-from sklearn.preprocessing import StandardScaler
+
 
 class Classification():
     
@@ -89,7 +88,6 @@ class Classification():
         print('getting data from file '+filename+"...")
         X = list()
         y = list()
-        Xy=set()
         with open(filename, "r") as infile:
             for line in infile:
                 label_and_utterance = line.lower().split(" ", 1)
@@ -302,7 +300,7 @@ class Classification():
     def train_lr(self):
         print('Training LR classifier...')
         
-        self.clf = LogisticRegression(random_state=0, max_iter=200, penalty='l2')
+        self.clf = LogisticRegression(random_state=0, max_iter=200)
         self.clf.fit(self.X_train_vectorized, np.ravel(np.reshape(self.y_train,(-1,1))))
         
     
@@ -310,7 +308,7 @@ class Classification():
     def train_nn(self):
         print('Training NN classifier...')
         
-        self.clf = MLPClassifier(random_state=1, max_iter=200)
+        self.clf = MLPClassifier(max_iter=200)
         self.clf.fit(self.X_train_vectorized, np.ravel(np.reshape(self.y_train,(-1,1))))  
         
         
@@ -344,6 +342,16 @@ class Classification():
     def get_wrong_predictions(self):
         return self.wrong_predictions
 
+    #%%
+    def make_dict(self,wrong_preds):
+        #get tuple (y_pred,y_true) for error analysis from wrong_preds
+        d={}
+        for x, y_pred, y in wrong_preds:
+            if (y_pred, y) in d.keys():
+                d[(y_pred, y)]+=1
+            else:
+                d[(y_pred, y)]=1
+        return d
     #%%
     def cv(self,clf,oversampling):
         """
@@ -396,7 +404,8 @@ class Classification():
     
 #%%
     def prepare_gs(self):
-        from sklearn.decomposition import TruncatedSVD
+        #need to perform this before grid_search to transform X into bag of words representation
+        print("creating bag of words representation...")
         v=CountVectorizer()
         self.X_vectorized=v.fit_transform(self.X)
 
@@ -420,6 +429,7 @@ class Classification():
             DESCRIPTION.
 
         """
+        print("starting grid search...")
         search = GridSearchCV(clf, params, cv=5)
         
         search.fit(self.X_vectorized, self.y)

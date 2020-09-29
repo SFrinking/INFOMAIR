@@ -9,11 +9,10 @@ import pandas as pd
 from Levenshtein import distance as dt
 from nltk.corpus import stopwords as s_w
 from nltk.tokenize import word_tokenize as w_t
-import nltk
 from classification import Classification
 import re
 import random
-
+import time
 #%%
 class Dialogue_Agent():
     
@@ -38,7 +37,7 @@ class Dialogue_Agent():
         self.clf_agent= Classification()
         self.clf_agent.initialize_data(dialog_acts_filename)
         self.clf_agent.train_lr()
-        # -- Cesar -- preparation for preference extraction
+        #preparation for preference extraction
         file=pd.read_csv(restaurant_matrix_filename)
         
         #extracting columns
@@ -97,295 +96,9 @@ class Dialogue_Agent():
             }
             
         self.dialogue("", "init", [0,0,0])
-    #%%
-
-    def classification(self,phrase):
-        y_pred=self.clf_agent.predict(phrase)
-        return y_pred
-    
-    # %%
-    
-    
-    
-    #function that removes stop words e.g Levenshtein_Distance("the",thai") too little
-    def stopwords_removal(self,s):
-        tk=w_t(s)
-        s=[i for i in tk if not i in (s_w.words('english'))]
-        s=" ".join(s)
-        s = s.lower()
-        #print(s)
-        s=s.split(" ")
-        #print(s)
-        return s
-    
-    
-    
-   
-    
-    # %%
-    # -- Cesar -- preference extraction
-    
-    def preference_extractor(self,user_input):
-        """
-        Extract restaurant preference based on user utterance
-    
-        Parameters
-        ----------
-        user_input : str
-            user utterance.
-    
-        Returns
-        -------
-        None.
-    
-        """
-        
-        p=[0 for i in range(3)] #the preferences are stored in a list of three elements, p[0] for the area, p[1] for the price range and p[2] for the food type
-        s=self.stopwords_removal(user_input)
-    
-        p=self.no_preference(user_input, p) #check if user indicated no preference
-        
-        #keyword matching for the area
-        for i in s:
-            for j in self.area:
-                if i == j:
-                    p[0] = j
-        if(('north' and 'american' in s) and (s.count('north'))>1):
-            p[0]=0
-        #print(p)
-        #keyword matching for the price range
-        for i in s:
-            for j in self.price_range:
-                if i == j:
-                    p[1] = j
-                    
-        #keyword matching for the food type
-        for i in s:
-            for j in self.food_types:
-                if i == j:
-                    p[2] = j
-                elif ('asian' and 'oriental' in s):
-                    p[2]='asian oriental'
-                elif ('modern' and 'european' in s):
-                    p[2]='modern european'
-                elif ('north' and 'american' in s):
-                    p[2]='north american'
-                    
-        #In case the area has been mispelt
-        if (p[0] == 0):
-            d = {}
-            l=[]
-            z=['south', 'centre', 'west', 'east', 'north']
-            for i in s:
-                for j in z:
-                    if (dt(i, j)<=1):   
-                        d[j] = dt(i, j)
-            #print(d)
-            for i in d.values():
-                l.append(i)
-            if len(l)>0:
-                k = min(l)
-                key_list = list(d.keys())
-                val_list = list(d.values())
-                if k<=2:
-                    p[0] = key_list[val_list.index(k)]
-    
-        #In case the price range has been mispelt
-        if (p[1] == 0):
-            d = {}
-            l=[]
-            d = {}
-            l=[]
-            for i in s:
-                for j in list(set(self.price_range)):
-                    if (dt(i, j)<=3):   
-                        d[j] = dt(i, j)
-            for i in d.values():
-                l.append(i)
-            if len(l)>0:
-                k = min(l)
-                key_list = list(d.keys())
-                val_list = list(d.values())
-                if k<=2:
-                    p[1] = key_list[val_list.index(k)]
-            for i in s:
-                for j in list(set(self.price_range)):
-                    if (dt(i, j)<=3):   
-                        d[j] = dt(i, j)
-            #print(d)
-            for i in d.values():
-                l.append(i)
-            if len(l)>0:
-                k = min(l)
-                key_list = list(d.keys())
-                val_list = list(d.values())
-                if k<=2:
-                    p[1] = key_list[val_list.index(k)]
-        #In case the  food type has been mispelt                
-        #thresolds for Levenshtein distances might need to be better tuned for each preference
-        if (p[2] == 0):
-            d = {}
-            l=[]
-            for i in s:
-                for j in list(set(self.food_types)):
-                    if (dt(i, j)<=2):   
-                        d[j] = dt(i, j)
-                    elif (dt('asian',i)<=2 or dt('oriental',i)<=2 in s):
-                        d['asian oriental']=min([dt('asian',i),dt('oriental',i)])
-                    elif (dt('modern',i)<=2 or dt('european',i)<=2 in s):
-                        d['modern european']=min([dt('modern',i),dt('european',i)])
-                    elif (dt('north',i)<=2 or dt('american',i)<=2 in s):
-                        if('north' and 'american' in s):
-                            d['north american']=min([dt('north',i),dt('american',i)])
-            #print(d)
-            for i in d.values():
-                l.append(i)
-            if len(l)>0:
-                k = min(l)
-                key_list = list(d.keys())
-                val_list = list(d.values())
-                if k<=3:
-                    p[2] = key_list[val_list.index(k)]    
-        return p
-    #%%
-    def alternative_preferences(self,user_preferences):
-        """
-        used if no restaurants. Use alternative preferences based on set membership to find additional restaurants.
-
-        Parameters
-        ----------
-        user_preferences : list
-            list of the user preferences.
-
-        Returns
-        -------
-        area_alternatives : list
-            list of alternative area preferences.
-        price_alternatives : list
-            list of alternative price preferences.
-        food_alternatives : list
-            list of alternative food type preferences.
-
-        """
-        #The input for this function is list S of composed of 3 strings equivalent to user preferences
-        #S[0], S[1] and S[2] respectively store area, price range and food type
-        a_1=list({'centre', 'north', 'west'})
-        a_2=list({'centre', 'north', 'east'})
-        a_3=list({'centre', 'south', 'west'})
-        a_4=list({'centre', 'south', 'east'})
-        north_list=list({'north'})
-        a=[a_1,a_2,a_3,a_4]
         
         
-        
-        #Price range sub-sets
-        
-        p_1=list({'cheap', 'moderate'})
-        p_2=list({'moderate', 'expensive'})
-        p=[p_1,p_2]
-        
-        
-        #Food type set & sub-sets
-        
-        
-        f_1=list({'thai', 'chinese', 'korean', 'vietnamese','asian oriental'})
-        f_2=list({'mediterranean', 'spanish', 'portuguese', 'italian', 'romanian', 'tuscan', 'catalan'})
-        f_3=list({'french', 'european', 'bistro', 'swiss', 'gastropub', 'traditional'})
-        f_4=list({'north american', 'steakhouse', 'british'})
-        f_5=list({'lebanese', 'turkish', 'persian'})
-        f_6=list({'international', 'modern european', 'fusion'})
-        f=[f_1,f_2,f_3,f_4,f_5,f_6]
-        #Retrieving the criterias
-        s_1=user_preferences[0]
-        s_2=user_preferences[1]
-        s_3=user_preferences[2]
-        
-        #Retrieving affiliated subset of area s_1
-        k=[]
-        for i in range(len(a)):
-            for j in range(len(a[i])):
-                if s_1 in a[i]:
-                  k.extend(a[i])
-        area_alternatives=list(set(k))
-        del area_alternatives[area_alternatives.index(s_1)]  
-    
-        #price
-        l=[]
-        for i in range(len(p)):
-            for j in range(len(p[i])):
-                if s_2 in p[i]:
-                    l.extend(p[i])
-        price_alternatives=list(set(l))  #remove pairs
-        del price_alternatives[price_alternatives.index(s_2)]
-        #food
-        food_alternatives=[]
-        for i in range(len(f)):
-            for j in range(len(f[i])):
-                if s_3 in f[i]:
-                    food_alternatives=f[i] #no possible intersections within these sets
-        del food_alternatives[food_alternatives.index(s_3)]        
-        return area_alternatives,price_alternatives,food_alternatives #output 3 lists but might need to change the type to satisfy the rest of the code
-        
-     #%%
-        
-    def no_preference(self,user_input, p):
-        """
-        check if user indicated no preference by using keyword matching
-    
-        Parameters
-        ----------
-        user_input : str
-            DESCRIPTION.
-        p : list
-            list of preferences.
-    
-        Returns
-        -------
-        p : list
-            DESCRIPTION.
-    
-        """
-        if "world food" in user_input.lower():
-            p[2]='any'
-        if "international food" in user_input.lower():
-            p[2]='any'
-        
-        keywords=re.findall( "any\s(\w+)", user_input.lower())
-        if ("area" in keywords):
-            p[0]='any'
-        if ("price" in keywords):
-            p[1]='any'
-        if ("food" in keywords):
-            p[2]='any'
-        return p
- 
- 
-    #%%
-    def grounding(self, user_preferences):
-        """
-        generate sentence for grounding with the user.
-
-        Parameters
-        ----------
-        user_preferences : list
-            list of user preferences.
-
-        Returns
-        -------
-        answer template with slots filled by user preferences
-        """
-        #the preferences are stored in a list of three elements, p[0] for the area, p[1] for the price range and p[2] for the food type
-        answer_template= "So you would like me to find a restaurant "
-        p=user_preferences
-        if p[0]:
-            answer_template+="in the {} of town ".format(p[0])
-        if p[1]:
-            answer_template+="priced {}ly ".format(p[1])
-        if p[2]:
-            answer_template+="serving {} cuisine ".format(p[2])
-        return answer_template.rstrip()+". "
-        
-    #%%
+        #%%
     
     def dialogue(self, user_input, state, user_preferences):
         """
@@ -405,6 +118,7 @@ class Dialogue_Agent():
         None.
 
         """
+        
         self.statelog.append([user_input,state]) #tuple of user utterance and its associated state. We use this to keep track of state jumps.
     
         if state == "exit":
@@ -491,22 +205,32 @@ class Dialogue_Agent():
                     state = "answer"
             else:
                 alternatives=self.get_alternative_restaurants(self.alternative_preferences(user_preferences))#offer alternatives
-                print(random.choice(self.responses.get("NoOptions"))+"Here is a list of alternatives:")
-                for a in alternatives:
-                    print(self.get_restaurant_info(a))
-                user_input = input('Would you like to choose one (1) or change your preferences(2)?')
-                if user_input=="1":
-                    user_input=input("Which one would you like to choose?")
-                    if user_input in alternatives:
-                        self.recommendation=user_input
-                        state="thankyou"
-                elif user_input=="2":
+                if alternatives:
+                    print(random.choice(self.responses.get("NoOptions"))+"Here is a list of alternatives:")
+                    for a in alternatives:
+                        print(self.get_restaurant_info(a))
+                    user_input = input('Would you like to choose one (1) or change your preferences(2)?')
+                    if user_input=="1":
+                        user_input=input("Which one would you like to choose?")
+                        for alternative in alternatives:
+                            if dt(user_input, alternative)<3:
+                                self.recommendation=alternative
+                                state="thankyou"
+                        #if user_input in alternatives:
+                        #    self.recommendation=user_input
+                        #    state="thankyou"
+                    elif user_input=="2":
+                        user_preferences=[0,0,0]
+                        state='inform'
+                    elif user_input=="exit":
+                        state='exit'
+                    else:
+                        print("Please choose one of the two options")
+                else:
+                    print("Sorry, we couldn't find anything matching your preferences and there were no good alternatives. I propose we start over.")
                     user_preferences=[0,0,0]
                     state='inform'
-                elif user_input=="exit":
-                    state='exit'
-                else:
-                    print("Please choose one of the two options")
+                    user_input=""
             self.dialogue(user_input, state, user_preferences)
             return
             
@@ -537,13 +261,300 @@ class Dialogue_Agent():
         
     
         else:
-            user_input = input("Please repeat")#statelog[len(statelog) + 1][0]
+            print("I could not understand that, could you phrase it differently?")#statelog[len(statelog) + 1][0]
             state = self.statelog[len(self.statelog) - 2][1]
             self.dialogue(user_input, state, user_preferences)
             return
             
         
         
+    #%%
+
+    def classification(self,phrase):
+        y_pred=self.clf_agent.predict(phrase)
+        return y_pred
+    
+    # %%
+    #function that removes stop words as preprocessing for preference extractor.
+    #Levenshtein_Distance("the",thai") too little
+    def stopwords_removal(self,s):
+        tk=w_t(s)
+        s=[i for i in tk if not i in (s_w.words('english'))]
+        s=" ".join(s)
+        s = s.lower()
+        #print(s)
+        s=s.split(" ")
+        #print(s)
+        return s
+    
+    # %%
+    # -- Cesar -- preference extraction
+    
+    def preference_extractor(self,user_input):
+        """
+        
+
+        Parameters
+        ----------
+        user_input : str
+            user utterance.
+
+        Returns
+        -------
+        user_preferences : list
+            list of user preferences extracted from utterance.
+            p[0] for the area, p[1] for the price range and p[2] for the food type
+
+        """
+        
+        user_preferences=[0 for i in range(3)] #the preferences are stored in a list of three elements, p[0] for the area, p[1] for the price range and p[2] for the food type
+        s=self.stopwords_removal(user_input)
+    
+        user_preferences=self.no_preference(user_input, user_preferences) #check if user indicated no preference
+        
+        #keyword matching for the area
+        for i in s:
+            for j in self.area:
+                if i == j:
+                    user_preferences[0] = j
+        if(('north' and 'american' in s) and (s.count('north'))>1):
+            user_preferences[0]=0
+        #print(p)
+        #keyword matching for the price range
+        for i in s:
+            for j in self.price_range:
+                if i == j:
+                    user_preferences[1] = j
+                    
+        #keyword matching for the food type
+        for i in s:
+            for j in self.food_types:
+                if i == j:
+                    user_preferences[2] = j
+                elif ('asian' and 'oriental' in s):
+                    user_preferences[2]='asian oriental'
+                elif ('modern' and 'european' in s):
+                    user_preferences[2]='modern european'
+                elif ('north' and 'american' in s):
+                    user_preferences[2]='north american'
+                    
+        #In case the area has been mispelt
+        if (user_preferences[0] == 0):
+            d = {}
+            l=[]
+            z=['south', 'centre', 'west', 'east', 'north']
+            for i in s:
+                for j in z:
+                    if (dt(i, j)<=2) and i!='want':   
+                        d[j] = dt(i, j)
+            #print(d)
+            for i in d.values():
+                l.append(i)
+            if len(l)>0:
+                k = min(l)
+                key_list = list(d.keys())
+                val_list = list(d.values())
+                if k<=2:
+                    user_preferences[0] = key_list[val_list.index(k)]
+    
+        #In case the price range has been mispelt
+        if (user_preferences[1] == 0):
+            d = {}
+            l=[]
+            d = {}
+            l=[]
+            for i in s:
+                for j in list(set(self.price_range)):
+                    if (dt(i, j)<=3):   
+                        d[j] = dt(i, j)
+            for i in d.values():
+                l.append(i)
+            if len(l)>0:
+                k = min(l)
+                key_list = list(d.keys())
+                val_list = list(d.values())
+                if k<=2:
+                    user_preferences[1] = key_list[val_list.index(k)]
+            for i in s:
+                for j in list(set(self.price_range)):
+                    if (dt(i, j)<=3):   
+                        d[j] = dt(i, j)
+            #print(d)
+            for i in d.values():
+                l.append(i)
+            if len(l)>0:
+                k = min(l)
+                key_list = list(d.keys())
+                val_list = list(d.values())
+                if k<=2:
+                    user_preferences[1] = key_list[val_list.index(k)]
+        #In case the  food type has been mispelt                
+        #thresolds for Levenshtein distances might need to be better tuned for each preference
+        if (user_preferences[2] == 0):
+            d = {}
+            l=[]
+            for i in s:
+                for j in list(set(self.food_types)):
+                    if (dt(i, j)<=2):   
+                        d[j] = dt(i, j)
+                    elif (dt('asian',i)<=2 or dt('oriental',i)<=2 in s):
+                        d['asian oriental']=min([dt('asian',i),dt('oriental',i)])
+                    elif (dt('modern',i)<=2 or dt('european',i)<=2 in s):
+                        d['modern european']=min([dt('modern',i),dt('european',i)])
+                    elif (dt('north',i)<=2 or dt('american',i)<=2 in s):
+                        if('north' and 'american' in s):
+                            d['north american']=min([dt('north',i),dt('american',i)])
+            for i in d.values():
+                l.append(i)
+            if len(l)>0:
+                k = min(l)
+                key_list = list(d.keys())
+                val_list = list(d.values())
+                if k<=3:
+                    user_preferences[2] = key_list[val_list.index(k)]    
+        return user_preferences
+    #%%
+    def alternative_preferences(self,user_preferences):
+        """
+        used if no restaurants. Use alternative preferences based on set membership to find additional restaurants.
+
+        Parameters
+        ----------
+        user_preferences : list
+            list of the user preferences.
+
+        Returns
+        -------
+        area_alternatives : list
+            list of alternative area preferences.
+        price_alternatives : list
+            list of alternative price preferences.
+        food_alternatives : list
+            list of alternative food type preferences.
+
+        """
+        #The input for this function is list S of composed of 3 strings equivalent to user preferences
+        #S[0], S[1] and S[2] respectively store area, price range and food type
+        a_1=list({'centre', 'north', 'west'})
+        a_2=list({'centre', 'north', 'east'})
+        a_3=list({'centre', 'south', 'west'})
+        a_4=list({'centre', 'south', 'east'})
+        areas=[a_1,a_2,a_3,a_4]
+        
+        
+        
+        #Price range sub-sets
+        
+        p_1=list({'cheap', 'moderate'})
+        p_2=list({'moderate', 'expensive'})
+        prices=[p_1,p_2]
+        
+        
+        #Food type set & sub-sets
+        
+        
+        f_1=list({'thai', 'chinese', 'korean', 'vietnamese','asian oriental'})
+        f_2=list({'mediterranean', 'spanish', 'portuguese', 'italian', 'romanian', 'tuscan', 'catalan'})
+        f_3=list({'french', 'european', 'bistro', 'swiss', 'gastropub', 'traditional'})
+        f_4=list({'north american', 'steakhouse', 'british'})
+        f_5=list({'lebanese', 'turkish', 'persian'})
+        f_6=list({'international', 'modern european', 'fusion'})
+        food_types=[f_1,f_2,f_3,f_4,f_5,f_6]
+        #Retrieving the criterias
+        s_1=user_preferences[0]
+        s_2=user_preferences[1]
+        s_3=user_preferences[2]
+        
+        #Retrieving affiliated subset of area s_1
+        k=[]
+        for i in range(len(areas)):
+            for j in range(len(areas[i])):
+                if s_1 in areas[i]:
+                  k.extend(areas[i])
+        area_alternatives=list(set(k))
+        if area_alternatives:
+            del area_alternatives[area_alternatives.index(s_1)]  
+            
+    
+        #price
+        l=[]
+        for i in range(len(prices)):
+            for j in range(len(prices[i])):
+                if s_2 in prices[i]:
+                    l.extend(prices[i])
+        price_alternatives=list(set(l))  #remove pairs
+        if price_alternatives:
+            del price_alternatives[price_alternatives.index(s_2)]
+        #food
+        food_alternatives=[]
+        for i in range(len(food_types)):
+            for j in range(len(food_types[i])):
+                if s_3 in food_types[i]:
+                    food_alternatives=food_types[i] #no possible intersections within these sets
+        if food_alternatives:
+            del food_alternatives[food_alternatives.index(s_3)]        
+        return area_alternatives,price_alternatives,food_alternatives 
+        
+     #%%
+        
+    def no_preference(self,user_input, user_preferences):
+        """
+        check if user indicated no preference by using keyword matching
+    
+        Parameters
+        ----------
+        user_input : str
+            input from the user
+        user_preferences : list
+            list of preferences.
+    
+        Returns
+        -------
+        user_preferences : list
+            return the user_preferences with keyword any if user indicated no preference.
+    
+        """
+        if "world food" in user_input.lower():
+            user_preferences[2]='any'
+        if "international food" in user_input.lower():
+            user_preferences[2]='any'
+        
+        keywords=re.findall( "any\s(\w+)", user_input.lower())
+        if ("area" in keywords):
+            user_preferences[0]='any'
+        if ("price" in keywords):
+            user_preferences[1]='any'
+        if ("food" in keywords):
+            user_preferences[2]='any'
+        return user_preferences
+ 
+ 
+    #%%
+    def grounding(self, user_preferences):
+        """
+        generate sentence for grounding with the user.
+
+        Parameters
+        ----------
+        user_preferences : list
+            list of user preferences.
+
+        Returns
+        -------
+        answer template with slots filled by user preferences
+        """
+        #the preferences are stored in a list of three elements, p[0] for the area, p[1] for the price range and p[2] for the food type
+        answer_template= "So you would like me to find a restaurant "
+        p=user_preferences
+        if p[0]:
+            answer_template+="in the {} of town ".format(p[0])
+        if p[1]:
+            answer_template+="priced {}ly ".format(p[1])
+        if p[2]:
+            answer_template+="serving {} cuisine ".format(p[2])
+        return answer_template.rstrip()+". "
+        
+    
         #%%
     def get_alternative_restaurants(self,alternative_preferences):
         """

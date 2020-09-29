@@ -102,9 +102,6 @@ GridSearch:
     clf_agent=Classification()
     clf_agent.open_dataset("dialog_acts.dat")
     clf=MLPClassifier()
-    clf_agent=Classification()
-    clf_agent.open_dataset("dialog_acts.dat")
-    clf=MLPClassifier()
     clf_agent.prepare_gs()
     params={'learning_rate':['constant'],
             'learning_rate_init':[0.01,0.001,0.0001],
@@ -132,7 +129,7 @@ Basic usage:
 
 ```python
     from dialogue_agent import Dialogue_Agent
-    da = Dialogue_Agent()
+    da = Dialogue_Agent("dialog_acts.dat","restaurant_info.csv")
 ```
 
 The dialog agent also keeps track of its states. These can be printed with: 
