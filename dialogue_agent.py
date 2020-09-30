@@ -345,7 +345,7 @@ class Dialogue_Agent():
             z=['south', 'centre', 'west', 'east', 'north']
             for i in s:
                 for j in z:
-                    if (dt(i, j)<=2) and i!='want':   
+                    if (dt(i, j)<=2) and i!='want' and i!='eat':   
                         d[j] = dt(i, j)
             #print(d)
             for i in d.values():
