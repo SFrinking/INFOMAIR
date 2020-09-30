@@ -52,7 +52,8 @@ class Dialogue_Agent():
         self.open_kitchen=list(file['open kitchen'])
         self.hygiene=list(file['hygiene'])
         self.suggestions=[]
-        self.responses={"Welcome": 
+        self.delay=0
+        self.responses_formal={"Welcome": 
             ["Hello! I can recommend restaurants to you. To start, please enter your request. You can ask for restaurants by area, price range, or food type\n",
              "Hello and welcome to our restaurant system. You can ask for restaurants by area, price range, or food type. To start, please enter your request\n",
              "Hello! You can ask for restaurants by area, price range, or food type. How may I help you?\n"],
@@ -69,7 +70,7 @@ class Dialogue_Agent():
             "AffirmPreferences":
                 ['So, you are looking for a restaurant in the {0} part of town, with {1} price range, serving {2} food, correct?\n'], 
             
-            'Answer':
+            "Answer":
                 ["Okay, here is your recommendation: '{}'. Is it fine? \n",
                 "I have found a nice restaurant matching your preferences: ‘{}’. Do you like it? \n",
                 "I can recommend a good place that fits your criteria: ‘{}’. Is it fine? \n"],
@@ -82,6 +83,32 @@ class Dialogue_Agent():
                 ["Thank you for using our restaurant system. Come back! \n",
                 "Thank you, I hope I was useful. Do come back! \n"]
                 }
+
+        self.responses_informal={
+                "Welcome": 
+                    ["Hi, let’s choose a restaurant! Where do you want to eat? Area, price range, food type?\n"],
+         
+                "Area":
+                    ["What part of town do you have in mind?\n"],
+                "Price":
+                    ["What’s your budget? Cheap, moderate, or expensive?\n"],
+                "Food":
+                    ["What sort of food would you like? \n"],
+                
+                "AffirmPreferences":
+                    ["So, you want a restaurant in the {0} part of town, with {1} price range, serving {2} food, am I right?\n"], 
+                
+                "Answer":
+                    ["Okay, I came up with a recommendation: '{}'. Sounds good? \n",
+                    "I have found a cool place matching your preferences: ‘{}’. You like it? \n"],
+                
+                "NoOptions":
+                    ["Sorry, there’s nothing matching your needs. Wanna try something else? \n"],
+                    
+                "Goodbye":
+                    ["Thanks, hope it was useful. See you! \n"]
+                    }
+        self.responses=self.responses_informal
             
         self.inference_rules={ "cheap,good food":["busy"],
             "spanish":["longtime"], 
@@ -95,9 +122,19 @@ class Dialogue_Agent():
             'boring':['not romantic']
             }
             
+        
+        
+        
+    #%%
+    def start_dialogue(self):
         self.dialogue("", "init", [0,0,0])
-        
-        
+    #%%
+    def configure_formality(self, formality):
+        if formality==True:
+            self.responses=self.responses_formal
+    def configure_delay(self, time_delay):
+        self.delay=time_delay
+            
         #%%
     
     def dialogue(self, user_input, state, user_preferences):
@@ -118,7 +155,7 @@ class Dialogue_Agent():
         None.
 
         """
-        
+        time.sleep(self.delay)
         self.statelog.append([user_input,state]) #tuple of user utterance and its associated state. We use this to keep track of state jumps.
     
         if state == "exit":
@@ -205,7 +242,11 @@ class Dialogue_Agent():
                     state = "answer"
             else:
                 alternatives=self.get_alternative_restaurants(self.alternative_preferences(user_preferences))#offer alternatives
-                if alternatives:
+                if len(alternatives)==1:
+                    print(random.choice(self.responses.get("NoOptions"))+"However, let me look for an alternative for you...")
+                    self.suggestions=alternatives
+                    self.suggest_restaurant()
+                elif alternatives:
                     print(random.choice(self.responses.get("NoOptions"))+"Here is a list of alternatives:")
                     for a in alternatives:
                         print(self.get_restaurant_info(a))

@@ -149,3 +149,12 @@ Some important methods for the dialog agent:
     da.ask_extra_preferences(self,user_preferences) #ask user for additional preferences, suggest restaurant and give reason why restaurant was suggested.
     da.make_inferences(self,KB) #given a knowledge base, infer new knowledge based on self defined inference rules.
 ```
+
+Extra Configurations:
+
+```python
+    da = Dialogue_Agent("dialog_acts.dat","restaurant_info.csv")
+    da.configure_formality(True) #False=informal
+    da.configure_delay(0.5) #configure_delay in seconds. 
+    da.start_dialogue()
+```
