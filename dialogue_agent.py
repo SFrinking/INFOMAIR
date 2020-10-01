@@ -16,7 +16,7 @@ import time
 #%%
 class Dialogue_Agent():
     
-    def __init__(self,dialog_acts_filename, restaurant_matrix_filename):
+    def __init__(self,dialog_acts_filename, restaurant_matrix_filename, machine_learning_model=""):
         """
         initialize the dialog agent
 
@@ -26,7 +26,8 @@ class Dialogue_Agent():
             filename of dialog acts. Dialog acts should be in format of [label utterance] with whitespace as separator.
         restaurant_matrix_filename : str
             csv file containing restaurants, their contacts and information.
-
+        machine_learning_model: str
+            nn for neural net, standard LR
         Returns
         -------
         None.
@@ -36,7 +37,10 @@ class Dialogue_Agent():
         
         self.clf_agent= Classification()
         self.clf_agent.initialize_data(dialog_acts_filename)
-        self.clf_agent.train_lr()
+        if machine_learning_model=="nn":
+            self.clf_agent.train_nn()
+        else:
+            self.clf_agent.train_lr()
         #preparation for preference extraction
         file=pd.read_csv(restaurant_matrix_filename)
         
@@ -111,13 +115,13 @@ class Dialogue_Agent():
         self.responses=self.responses_informal
             
         self.inference_rules={ "cheap,good food":["busy"],
-            "spanish":["longtime"], 
-            'busy':['longtime','not romantic'], 
-            'long time':['not children', 'not romantic'],  
-            'bad hygiene,open kitchen':['not romantic'],
-            'bad food,bad hygiene':['not busy'],
+            "spanish":["long time"], 
+            'busy':['long time','not romantic'], 
+            'long time':['not children', 'romantic'],  
+            'not hygiene,open kitchen':['not romantic'],
+            'not good food,not hygiene':['not busy'],
             'open kitchen':['children'],
-            'long time, not open kitchen':['boring'],
+            'long time,not open kitchen':['boring'],
             'boring,expensive':['not busy'],
             'boring':['not romantic']
             }
@@ -130,9 +134,11 @@ class Dialogue_Agent():
         self.dialogue("", "init", [0,0,0])
     #%%
     def configure_formality(self, formality):
+        #formality needs to be a bool. True=formal, False=informal. Standard False.
         if formality==True:
             self.responses=self.responses_formal
     def configure_delay(self, time_delay):
+        #time_delay in seconds.
         self.delay=time_delay
             
         #%%
@@ -162,14 +168,14 @@ class Dialogue_Agent():
             print(random.choice(self.responses.get("Goodbye")))
             return
         
-        if state in ("init", "hello"):
+        if state in ("init"):
             user_preferences = [0,0,0]
             user_input = input(random.choice(self.responses.get("Welcome")))
             state = self.classification(user_input)
             self.dialogue(user_input, state, user_preferences)
             return
             
-        if state in ("inform", "reqalts"):
+        if state in ("inform", "reqalts", 'hello'):
             extracted_preferences = self.preference_extractor(user_input)
             for i,d in enumerate(user_preferences):
                 if d == 0:
@@ -627,7 +633,7 @@ class Dialogue_Agent():
         #%%
     def ask_extra_preferences(self,user_preferences):
         """
-        ask the user for additional preferences using keyword matching, suggest restaurant and give reasoning.
+        ask the user for additional preferences using keyword matching, suggest restaurant and give reasoning steps.
 
         Parameters
         ----------
@@ -643,28 +649,88 @@ class Dialogue_Agent():
         state='confirmpreferences'
         user_input = input("Any other requirements?\n")
         requirement_options=['good food','open kitchen','hygiene', 'children', 'romantic','busy','boring' ]
-        user_requirements=self.get_user_extra_preferences(requirement_options,user_input)#extra prefs from user
         
+        user_requirements=self.get_user_extra_preferences(requirement_options,user_input)#extra prefs from user
+
         self.suggestions = self.lookup(user_preferences)
+
         for restaurant in self.suggestions:
+            
             i=self.restaurant_names.index(restaurant)
-            restaurant_extra_preferences={self.good_food[i], self.open_kitchen[i],self.hygiene[i]}
-            applied_rules,KB=self.make_inferences(restaurant_extra_preferences)
-            matching_rules= []
-            for user_requirement in user_requirements: #for example children friendly
-                if (user_requirement in KB):
-                    matching_rules.append(user_requirement)
-                for k,v in applied_rules.items():
-                    if user_requirement==v[0]:
-                        matching_rules.append(k+">"+', '.join(v))
-            if (matching_rules):
-                user_input=input("{}, this restaurant is recommended because of rules {}. Would you like to choose this restaurant?\n".format(restaurant,matching_rules))
+            #save restaurant info as knowledge base of restaurant
+            restaurant_KB={self.price_range[i], self.area[i], self.food_types[i],self.good_food[i], self.open_kitchen[i],self.hygiene[i]}
+            
+            #apply inference rules to gain knowledge about restaurant
+            applied_rules,KB=self.make_inferences(restaurant_KB)
+            self.present_steps(applied_rules)
+
+            #check whether to suggest or not and return the rule associated with the decision
+            suggest_or_not, (a,c)=self.check_viability(applied_rules, user_requirements)
+            if (suggest_or_not):
+                user_input=input("{}, this restaurant is recommended because of {}->{}. Would you like to choose this restaurant?\n".format(restaurant,a,c))
                 answer=self.classification(user_input)
                 if answer in ["affirm", "ack"]:
                     self.recommendation=restaurant
                     state="thankyou"
                     return state
+            elif not suggest_or_not:
+                if a:
+                    print("{}, this restaurant is not recommended because of {} -> {}".format(restaurant,a,c))
+                else:
+                    print("{}, this restaurant is not recommended because there were no rules matching your additional preferences".format(restaurant))
+           
+            else:
+                print("No rules applied for {}...".format(restaurant))
         return state
+    
+    
+    #%%
+    def check_viability(self, applied_rules,user_requirements):
+        """
+        return first rule associated with decision to suggest or not suggest a restaurant
+
+        Parameters
+        ----------
+        applied_rules : dict
+            dictionary of rules that were applied.
+        user_requirements : list
+            list of user requirements.
+
+        Returns
+        -------
+        TYPE
+            DESCRIPTION.
+
+        """
+        
+        for req in user_requirements:
+            label1=True
+            if "not" in req:
+                label1=False
+            for a,c in applied_rules.items():
+                if not (c!=c):
+                    for item in c:
+                        
+                        label2=True
+                        if "not" in item:
+                            label2=False
+                        if req in item and (label1==label2):
+                            return True, (a,c)
+                        elif req in item and (label1!=label2):
+                            return False, (a,c)
+        return False, ("","")
+                    
+                    
+    #%%
+    def present_steps(self,applied_rules):
+        i=0
+        for a,c in applied_rules.items():
+            
+            print("step {} : {}->{}".format(i, a,c))
+            i+=1
+        
+                    
+                
     #%%
     def get_user_extra_preferences(self,requirement_options,user_input):
         """
@@ -686,7 +752,7 @@ class Dialogue_Agent():
         user_requirements=[]
         for requirement in requirement_options:
             if requirement in user_input:
-                if "no "+requirement in user_input or "not "+requirement in user_input:
+                if "no "+requirement in user_input or "not "+requirement in user_input or 'bad '+requirement in user_input:
                     user_requirements.append("not "+requirement)
                 else:
                     user_requirements.append(requirement)
@@ -724,16 +790,21 @@ class Dialogue_Agent():
         applied_rules={}
         KB=list(KB)
         for knowledge in KB:
-            for key,values in self.inference_rules.items():
-                if knowledge == key:
-                    for v in values:
-                        applied_rules[key]=values
-                        KB.append(v)
-                elif knowledge in key:
-                    atoms=key.split(",")
-                    if (set(atoms) & set(KB) == set(atoms)):
-                        applied_rules[key]=values
-                        KB.extend(values)
+            applied_rules[knowledge]=[knowledge]
+            for antedecent,consequent in self.inference_rules.items(): #split in antedecent and consequent
+                if type(knowledge)==str:
+                    if knowledge == antedecent: #if knowledge is the antedecent of the rule
+                        for v in consequent:
+                            applied_rules[antedecent]=consequent
+                            KB.append(v)
+                    
+                    
+                    elif knowledge in antedecent:
+                        atoms=antedecent.split(",")
+    
+                        if (set(atoms) & set(KB) == set(atoms)):
+                            applied_rules[antedecent]=consequent
+                            KB.extend(consequent)
         return applied_rules,set(KB)     
     # %%
     # -- Ivan -- finite-state dialogue agent
