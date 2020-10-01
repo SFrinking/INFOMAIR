@@ -114,7 +114,7 @@ class Dialogue_Agent():
                     }
         self.responses=self.responses_informal
             
-        self.inference_rules={ "cheap,good food":["busy"],
+        self.implication_rules={ "cheap,good food":["busy"],
             "spanish":["long time"], 
             'busy':['long time','not romantic'], 
             'long time':['not children', 'romantic'],  
@@ -647,8 +647,8 @@ class Dialogue_Agent():
 
         """
         state='confirmpreferences'
-        user_input = input("Any other requirements?\n")
-        requirement_options=['good food','open kitchen','hygiene', 'children', 'romantic','busy','boring' ]
+        user_input = input("Any other requirements? You can choose from:\nGood food, open kitchen, good hygiene, children friendly, romantic or busy\n")
+        requirement_options=['good food','open kitchen','hygiene', 'children', 'romantic','busy','not boring' ]
         
         user_requirements=self.get_user_extra_preferences(requirement_options,user_input)#extra prefs from user
 
@@ -660,14 +660,15 @@ class Dialogue_Agent():
             #save restaurant info as knowledge base of restaurant
             restaurant_KB={self.price_range[i], self.area[i], self.food_types[i],self.good_food[i], self.open_kitchen[i],self.hygiene[i]}
             
-            #apply inference rules to gain knowledge about restaurant
+            #apply implication rules to gain knowledge about restaurant
             applied_rules,KB=self.make_inferences(restaurant_KB)
-            self.present_steps(applied_rules)
+            
 
             #check whether to suggest or not and return the rule associated with the decision
             suggest_or_not, (a,c)=self.check_viability(applied_rules, user_requirements)
             if (suggest_or_not):
-                user_input=input("{}, this restaurant is recommended because of {}->{}. Would you like to choose this restaurant?\n".format(restaurant,a,c))
+                self.present_steps(applied_rules)
+                user_input=input("{}, this restaurant is recommended because of {}->{}. Would you like to choose this restaurant?\n".format(restaurant.capitalize(),a,c))
                 answer=self.classification(user_input)
                 if answer in ["affirm", "ack"]:
                     self.recommendation=restaurant
@@ -675,9 +676,9 @@ class Dialogue_Agent():
                     return state
             elif not suggest_or_not:
                 if a:
-                    print("{}, this restaurant is not recommended because of {} -> {}".format(restaurant,a,c))
-                else:
-                    print("{}, this restaurant is not recommended because there were no rules matching your additional preferences".format(restaurant))
+                    self.present_steps(applied_rules)
+                    print("{}, this restaurant is not recommended because of {} -> {}".format(restaurant.capitalize(),a,c))
+                
            
             else:
                 print("No rules applied for {}...".format(restaurant))
@@ -712,11 +713,11 @@ class Dialogue_Agent():
                     for item in c:
                         
                         label2=True
-                        if "not" in item:
+                        if "not" in str(item):
                             label2=False
-                        if req in item and (label1==label2):
+                        if req in str(item) and (label1==label2):
                             return True, (a,c)
-                        elif req in item and (label1!=label2):
+                        elif req in str(item) and (label1!=label2):
                             return False, (a,c)
         return False, ("","")
                     
@@ -750,8 +751,13 @@ class Dialogue_Agent():
 
         """
         user_requirements=[]
+        if "closed kitchen" in user_input or 'a la carte' in user_input: 
+            user_requirements.append("not open kitchen")
+        if "bad food" in user_input: 
+            user_requirements.append("not good food")
         for requirement in requirement_options:
             if requirement in user_input:
+                
                 if "no "+requirement in user_input or "not "+requirement in user_input or 'bad '+requirement in user_input:
                     user_requirements.append("not "+requirement)
                 else:
@@ -774,7 +780,7 @@ class Dialogue_Agent():
        #%%
     def make_inferences(self,KB):
         """
-        Add knowledge to knowledge base KB by making use of inference rules.
+        Add knowledge to knowledge base KB by making use of implication rules.
 
         Parameters
         ----------
@@ -791,7 +797,7 @@ class Dialogue_Agent():
         KB=list(KB)
         for knowledge in KB:
             applied_rules[knowledge]=[knowledge]
-            for antedecent,consequent in self.inference_rules.items(): #split in antedecent and consequent
+            for antedecent,consequent in self.implication_rules.items(): #split in antedecent and consequent
                 if type(knowledge)==str:
                     if knowledge == antedecent: #if knowledge is the antedecent of the rule
                         for v in consequent:
