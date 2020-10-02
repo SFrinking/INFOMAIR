@@ -91,7 +91,7 @@ class Classification():
         with open(filename, "r") as infile:
             for line in infile:
                 label_and_utterance = line.lower().split(" ", 1)
-
+                
                 X.append(self.stem_sentence(label_and_utterance[1])) #reduce vocab by stemming
                 y.append(label_and_utterance[0])
         self.X,self.y=X,y

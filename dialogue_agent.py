@@ -180,8 +180,10 @@ class Dialogue_Agent():
             for i,d in enumerate(user_preferences):
                 if d == 0:
                     user_preferences[i] = extracted_preferences[i]
+            
             state="fill_blanks" #if more slots to be filled
             self.suggestions=self.lookup(user_preferences)
+
             if (len(self.suggestions)==0) or (len(self.suggestions)==1):
                 state="answer" #if there is none or 1 restaurant to suggest
             self.dialogue(user_input, state, user_preferences)
@@ -329,9 +331,7 @@ class Dialogue_Agent():
         s=[i for i in tk if not i in (s_w.words('english'))]
         s=" ".join(s)
         s = s.lower()
-        #print(s)
         s=s.split(" ")
-        #print(s)
         return s
     
     # %%
@@ -366,7 +366,6 @@ class Dialogue_Agent():
                     user_preferences[0] = j
         if(('north' and 'american' in s) and (s.count('north'))>1):
             user_preferences[0]=0
-        #print(p)
         #keyword matching for the price range
         for i in s:
             for j in self.price_range:
@@ -394,7 +393,6 @@ class Dialogue_Agent():
                 for j in z:
                     if (dt(i, j)<=2) and i!='want' and i!='eat':   
                         d[j] = dt(i, j)
-            #print(d)
             for i in d.values():
                 l.append(i)
             if len(l)>0:
@@ -426,7 +424,6 @@ class Dialogue_Agent():
                 for j in list(set(self.price_range)):
                     if (dt(i, j)<=3):   
                         d[j] = dt(i, j)
-            #print(d)
             for i in d.values():
                 l.append(i)
             if len(l)>0:

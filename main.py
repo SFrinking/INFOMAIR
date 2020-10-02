@@ -24,3 +24,12 @@ b.open_dataset("dialog_acts.dat")
 
 b.test_keyword_rule()
 print(b.score())
+
+
+
+clf=Classification()
+
+clf.initialize_data("dialog_acts.dat")
+
+clf.train_lr()#or
+clf.test_clf()
