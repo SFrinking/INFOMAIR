@@ -184,6 +184,7 @@ class Dialogue_Agent():
         
         if user_input in ["configure formal", "configure delay", "configure informal", "configure no delay"]:
             self.configure(user_input)
+            user_input=""
             self.dialogue(user_input,state,user_preferences)
         
         time.sleep(self.delay)
