@@ -157,7 +157,7 @@ The dialog agent also keeps track of its states. These can be printed with:
 Extra Configurations:
 
 ```
-    The agent can be configured after starting the dialogue. 
+    The agent can be configured after starting the dialogue. Use the following utterances to configure:
     
     "configure formal" #use formal sentences. 
     "configure informal" #use informal sentences. Standard configuration.
