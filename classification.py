@@ -1,7 +1,6 @@
 import numpy as np
 from nltk.stem.snowball import SnowballStemmer
 from sklearn.model_selection import train_test_split
-from imblearn.over_sampling import RandomOverSampler
 import matplotlib.pyplot as plt
 import itertools
 from sklearn.feature_extraction.text import CountVectorizer
@@ -25,7 +24,6 @@ class Classification():
         self.X_train_vectorized=[]
         self.X_test_vectorized=[]
         self.vectorizer=[]
-        self.title=""
         self.clf=""
         self.X_vectorized=[]
         self.wrong_predictions=[]
@@ -44,7 +42,6 @@ class Classification():
 
 
         """
-        self.title="Without Oversampling"
         self.open_dataset(filename)
         self.split_dataset(self.X,self.y)
         self.bag_of_words()
@@ -104,7 +101,7 @@ class Classification():
         
     
     #%%
-    #convert list of duplicates into dict with k,v where k=label and v=count
+    #convert list of duplicates into dict with k,v where k=label and v=count/frequency
     def Convert(self,lst): 
         counts = {}
         for i in lst:
@@ -124,22 +121,6 @@ class Classification():
         self.X_train_vectorized = self.vectorizer.fit_transform(self.X_train)
         self.X_test_vectorized=self.vectorizer.transform(self.X_test)
         
-
-    
-   
-    #%%
-    def oversampling(self):
-        """
-        Perform oversampling on training set. 
-
-        """
-        print('Performing oversampling...')
-        
-        d={'reqalts': 3000, 'affirm': 3000, 'thankyou': 3000, 'repeat': 3000, 'negate':3000, 'bye': 3000, 'confirm': 3000, 'hello': 3000, 'ack': 3000, 'deny':3000, 'restart':3000, 'reqmore':3000}
-        
-        ros = RandomOverSampler(random_state=42 , sampling_strategy=d)
-        self.title="With Oversampling"
-        self.X_train_vectorized, self.y_train=ros.fit_resample(self.X_train_vectorized, self.y_train)
         
 #%%
     #plot confusion matrix and print label counts
@@ -230,7 +211,7 @@ class Classification():
                          horizontalalignment="center",
                          color="white" if cm[i, j] > thresh else "black")
     
-        eval_metrics=self.EvalMetrics(y_predicted,self.y_test)
+        eval_metrics=self.eval_metrics(y_predicted,self.y_test)
         plt.tight_layout()
         plt.ylabel('True label')
         plt.xlabel('Predicted label\naccuracy={:0.4f}; misclass={:0.4f}\n{}'.format(accuracy, misclass,eval_metrics))
@@ -238,9 +219,9 @@ class Classification():
     
     
     
-    #%%   
+#%%   
     #get evaluation metrics
-    def EvalMetrics(self,y_predicted,y_test):
+    def eval_metrics(self,y_predicted,y_test):
         """
         get the micro and macro recall, precision and f score from testing on test set
     
@@ -271,40 +252,16 @@ class Classification():
         ma_f_score= f1_score(y_test, y_predicted, average='macro')
         return {'mi_recall':round(mi_recall,4), 'mi_precision':round(mi_precision,4), 'mi_f_score':round(mi_f_score,4),'ma_recall':round(ma_recall,4), 'ma_precision':round(ma_precision,4), 'ma_f_score':round(ma_f_score,4)}
         
-    
 
-    #%%
-    def predict(self, x):
-        """
-        stems and lower the phrase first, then vectorizes into bag of words representation. 
-
-        Parameters
-        ----------
-        phrase : str
-            DESCRIPTION.
-
-        Returns
-        -------
-        TYPE
-            DESCRIPTION.
-
-        """
-        if x=="exit":
-            return "exit"
-        X=self.vectorizer.transform([self.stem_sentence(x.lower())])
-        return self.clf.predict(X)[0]
-        
-        
-
-    #%%
+#%%
     def train_lr(self):
         print('Training LR classifier...')
         
-        self.clf = LogisticRegression(random_state=0, max_iter=200)
+        self.clf = LogisticRegression(random_state=0, max_iter=400)
         self.clf.fit(self.X_train_vectorized, np.ravel(np.reshape(self.y_train,(-1,1))))
         
     
-    #%%
+#%%
     def train_nn(self):
         print('Training NN classifier...')
         
@@ -312,7 +269,7 @@ class Classification():
         self.clf.fit(self.X_train_vectorized, np.ravel(np.reshape(self.y_train,(-1,1))))  
         
         
- #%%
+#%%
     def test_clf(self):
         """
         Test the previously trained classifier and plot confusion matrix. Train the classifier first.
@@ -335,35 +292,40 @@ class Classification():
             if y_pred[i]!=self.y_test[i]:
                 self.wrong_predictions.append((self.X_test[i],y_pred[i],self.y_test[i]))
             
-        self.make_confusion_matrix(y_pred, self.title+" "+str(self.clf).split("(")[0])
-   
-
+        self.make_confusion_matrix(y_pred,str(self.clf).split("(")[0])
+        
+ 
+    
 #%%
-    def get_wrong_predictions(self):
-        return self.wrong_predictions
+    def predict(self, x):
+        """
+        stems and lower the phrase first, then vectorizes into bag of words representation. 
 
-    #%%
-    def make_dict(self,wrong_preds):
-        #get tuple (y_pred,y_true) for error analysis from wrong_preds
-        d={}
-        for x, y_pred, y in wrong_preds:
-            if (y_pred, y) in d.keys():
-                d[(y_pred, y)]+=1
-            else:
-                d[(y_pred, y)]=1
-        return d
-    #%%
-    def cv(self,clf,oversampling):
+        Parameters
+        ----------
+        phrase : str
+            DESCRIPTION.
+
+        Returns
+        -------
+        TYPE
+            DESCRIPTION.
+
+        """
+        if x=="exit":
+            return "exit"
+        X=self.vectorizer.transform([self.stem_sentence(x.lower())])
+        return self.clf.predict(X)[0]
+#%%
+    def cv(self,clf):
         """
         Use 10-fold cross validation to better estimate the evaluation scores of the classifier. 
-        Random Oversampling set as extra option for the training set of each fold.
+
 
         Parameters
         ----------
         clf : classifier
             DESCRIPTION.
-        oversampling : bool
-            true=oversample training set, false=dont oversample.
 
         """
         
@@ -383,11 +345,6 @@ class Classification():
             y_train = np.ravel(np.reshape(self.y,(-1,1)))[train_index]  # Based on your code, you might need a ravel call here, but I would look into how you're generating your y
             X_test = X_vectorized[test_index]
             y_test = np.ravel(np.reshape(self.y,(-1,1)))[test_index]  # See comment on ravel and  y_train
-            if oversampling==True:
-                ros = RandomOverSampler(random_state=42 )
-                X_train,y_train=ros.fit_resample(X_train, y_train)
-                
-            
             model =  clf
             model.fit(X_train, y_train)  
             y_pred = model.predict(X_test)
@@ -400,8 +357,6 @@ class Classification():
             print(f'f-score: {f1_score(y_test, y_pred, average="macro")}')
         print("accuracy: ", sum(accuracy)/kf.n_splits,"f1_macro: ",sum(f1_macro)/kf.n_splits,"f1_micro: ",sum(f1_micro)/kf.n_splits )
         
-
-    
 #%%
     def prepare_gs(self):
         #need to perform this before grid_search to transform X into bag of words representation
@@ -435,3 +390,33 @@ class Classification():
         search.fit(self.X_vectorized, self.y)
         return search
         
+
+#%%
+    def get_wrong_predictions(self):
+        return self.wrong_predictions
+
+#%%
+    def get_tuple_misclassifications(self,wrong_preds):
+        """
+        analyze misclassifications by transforming to form (y_pred,y_true)
+
+        Parameters
+        ----------
+        wrong_preds : list
+            list of wrong predictions.
+
+        Returns
+        -------
+        d : dict
+            dictionary of wrong predictions frequencies.
+
+        """
+        #get tuple (y_pred,y_true) for error analysis from wrong_preds
+        d={}
+        for x, y_pred, y in wrong_preds:
+            if (y_pred, y) in d.keys():
+                d[(y_pred, y)]+=1
+            else:
+                d[(y_pred, y)]=1
+        return d
+   

@@ -1,8 +1,6 @@
 #!/usr/bin/env python
 # coding: utf-8
 
-# In[ ]:
-
 
 #imported librairies:
 import pandas as pd
@@ -141,7 +139,29 @@ class Dialogue_Agent():
         #time_delay in seconds.
         self.delay=time_delay
             
-        #%%
+    def configure(self,user_input):
+        """
+        dialog agent configuration options
+
+        Parameters
+        ----------
+        user_input : str
+            user utterance.
+
+        Returns
+        -------
+        None.
+
+        """
+        if user_input=="configure formal":
+            self.configure_formality(True)
+        elif user_input=="configure informal":
+            self.configure_formality(False)
+        elif user_input=="configure delay":
+            self.configure_delay(0.5)
+        elif user_input=="configure no delay":
+            self.configure_delay(0)
+    #%%
     
     def dialogue(self, user_input, state, user_preferences):
         """
@@ -161,16 +181,21 @@ class Dialogue_Agent():
         None.
 
         """
+        
+        if user_input in ["configure formal", "configure delay", "configure informal", "configure no delay"]:
+            self.configure(user_input)
+            self.dialogue(user_input,state,user_preferences)
+        
         time.sleep(self.delay)
         self.statelog.append([user_input,state]) #tuple of user utterance and its associated state. We use this to keep track of state jumps.
     
         if state == "exit":
-            print(random.choice(self.responses.get("Goodbye")))
+            print("Dialog Agent: "+random.choice(self.responses.get("Goodbye")))
             return
         
         if state in ("init"):
             user_preferences = [0,0,0]
-            user_input = input(random.choice(self.responses.get("Welcome")))
+            user_input = input("Dialog Agent: "+random.choice(self.responses.get("Welcome"))+"User: ")
             state = self.classification(user_input)
             self.dialogue(user_input, state, user_preferences)
             return
@@ -185,6 +210,7 @@ class Dialogue_Agent():
             self.suggestions=self.lookup(user_preferences)
 
             if (len(self.suggestions)==0) or (len(self.suggestions)==1):
+                
                 state="answer" #if there is none or 1 restaurant to suggest
             self.dialogue(user_input, state, user_preferences)
             return 
@@ -193,23 +219,29 @@ class Dialogue_Agent():
         if state == "fill_blanks": #ask user for area/foodtype/pricerange
             grounding=self.grounding(user_preferences)
             if user_preferences[0] == 0:
-                user_input = input(grounding+random.choice(self.responses.get("Area")))
+                user_input = input("Dialog Agent: "+grounding+random.choice(self.responses.get("Area"))+"User: ")
                 
                 state = self.classification(user_input)
                 if "area" not in user_input:
                     user_input+=" area"
+                if "dont care" in user_input:
+                    user_input='any area'
             elif user_preferences[1] == 0:
-                user_input = input(grounding+random.choice(self.responses.get("Price")))
+                user_input = input("Dialog Agent: "+grounding+random.choice(self.responses.get("Price"))+"User: ")
                 
                 state = self.classification(user_input)
                 if "price" not in user_input:
                     user_input+=" price"
+                if "dont care" in user_input:
+                    user_input='any price'
             elif user_preferences[2] == 0:
-                user_input = input(grounding+random.choice(self.responses.get("Food")))
+                user_input = input("Dialog Agent: "+grounding+random.choice(self.responses.get("Food"))+"User: ")
                 
                 state = self.classification(user_input)
                 if "food" not in user_input:
                     user_input+=" food"
+                if "dont care" in user_input:
+                    user_input='any food'
             else:
                 state='ask_extra_preferences'
             self.dialogue(user_input, state, user_preferences)
@@ -223,7 +255,7 @@ class Dialogue_Agent():
         
         
         if state=="confirmpreferences":
-            user_input = input(random.choice(self.responses.get("AffirmPreferences")).format(user_preferences[0],user_preferences[1],user_preferences[2]))
+            user_input = input("Dialog Agent: "+random.choice(self.responses.get("AffirmPreferences")).format(user_preferences[0],user_preferences[1],user_preferences[2])+"User: ")
             accept = self.agree(user_input)
             if accept is True:
                 self.suggestions = self.lookup(user_preferences)
@@ -242,7 +274,7 @@ class Dialogue_Agent():
         
         if state == "answer": 
             if self.suggestions:  
-                user_input=input(self.suggest_restaurant())
+                user_input=input("Dialog Agent: "+self.suggest_restaurant()+"User: ")
                 state = self.classification(user_input)
                 if state in ["ack", "affirm"]:
                     state = "goodbye"
@@ -250,33 +282,34 @@ class Dialogue_Agent():
                     state = "answer"
             else:
                 alternatives=self.get_alternative_restaurants(self.alternative_preferences(user_preferences))#offer alternatives
-                if len(alternatives)==1:
-                    print(random.choice(self.responses.get("NoOptions"))+"However, let me look for an alternative for you...")
+                if len(alternatives)==1: #found 1 alternative
+                    print("Dialog Agent: "+random.choice(self.responses.get("NoOptions"))+"Let me look for an alternative for you...\n")
                     self.suggestions=alternatives
-                    self.suggest_restaurant()
-                elif alternatives:
-                    print(random.choice(self.responses.get("NoOptions"))+"Here is a list of alternatives:")
+                    self.recommendation=self.suggestions[0]
+                    user_input=input("Dialog Agent: "+self.suggest_restaurant()+"User: ")
+                    if self.agree(user_input):
+                        self.get_restaurant_contacts(self.recommendation)
+                        state="goodbye"
+                elif alternatives: #found multiple alternatives
+                    print("Dialog Agent: "+random.choice(self.responses.get("NoOptions"))+"Here is a list of alternatives:")
                     for a in alternatives:
-                        print(self.get_restaurant_info(a))
-                    user_input = input('Would you like to choose one (1) or change your preferences(2)?')
+                        print("Dialog Agent: "+self.get_restaurant_info(a))
+                    user_input = input("Dialog Agent: "+'Would you like to choose one (1) or change your preferences(2)?\n'+"User: ")
                     if user_input=="1":
-                        user_input=input("Which one would you like to choose?")
+                        user_input=input("Dialog Agent: "+"Which one would you like to choose?\n"+"User: ")
                         for alternative in alternatives:
-                            if dt(user_input, alternative)<3:
+                            if dt(user_input.lower(), alternative.lower())<3:# take into account misspellings
                                 self.recommendation=alternative
                                 state="thankyou"
-                        #if user_input in alternatives:
-                        #    self.recommendation=user_input
-                        #    state="thankyou"
                     elif user_input=="2":
                         user_preferences=[0,0,0]
                         state='inform'
                     elif user_input=="exit":
                         state='exit'
                     else:
-                        print("Please choose one of the two options")
-                else:
-                    print("Sorry, we couldn't find anything matching your preferences and there were no good alternatives. I propose we start over.")
+                        print("Dialog Agent: "+"Please choose one of the two options")
+                else:#didnt find any alternative
+                    print("Dialog Agent: "+random.choice(self.responses.get("NoOptions")))
                     user_preferences=[0,0,0]
                     state='inform'
                     user_input=""
@@ -285,15 +318,13 @@ class Dialogue_Agent():
             
         
         if state in ["reqalts","thankyou", "goodbye", "reset"]:
-            if state == "reset":
-                print("Restarting the dialogue agent...")
-            else:
-                user_input=input(self.get_restaurant_contacts(self.recommendation)+". Would you like to finish here?")
+            
+            user_input=input("Dialog Agent: "+self.get_restaurant_contacts(self.recommendation)+". Would you like to finish here?\n"+"User: ")
 
-                if (self.classification(user_input) in ("ack","affirm")):
-                    state="exit"
-                else:
-                    state="init"
+            if (self.classification(user_input) in ("ack","affirm")):
+                state="exit"
+            else:
+                state="init"
             self.dialogue(user_input, state, user_preferences)
             return
         
@@ -303,29 +334,49 @@ class Dialogue_Agent():
                 user_input = self.statelog[len(self.statelog) - 3][0]
                 state = self.statelog[len(self.statelog) - 3][1]
             except IndexError:
-                print("Nowhere to go back, starting again\n")
+                print("Dialog Agent: "+"Nowhere to go back, starting again\n")
                 state = "init"
             self.dialogue(user_input, state, user_preferences)
             return
         
     
         else:
-            print("I could not understand that, could you phrase it differently?")#statelog[len(statelog) + 1][0]
+            print("Dialog Agent: "+"I could not understand that, could you phrase it differently?")#statelog[len(statelog) + 1][0]
             state = self.statelog[len(self.statelog) - 2][1]
             self.dialogue(user_input, state, user_preferences)
             return
             
         
-        
+    # %%
+    def agree(self,user_input):
+        """
+        check whether user agrees or denies
+    
+        Parameters
+        ----------
+        user_input : str
+            DESCRIPTION.
+    
+        Returns
+        -------
+        bool
+            true for agree, false for deny.
+    
+        """
+        response = self.classification(user_input)
+        if response in ["ack", "affirm"]:
+            return True
+        elif response in ["deny", "negate"]:
+            return False
+        else:
+            return response    
     #%%
 
     def classification(self,phrase):
         y_pred=self.clf_agent.predict(phrase)
         return y_pred
     
-    # %%
-    #function that removes stop words as preprocessing for preference extractor.
-    #Levenshtein_Distance("the",thai") too little
+    #%%
     def stopwords_removal(self,s):
         tk=w_t(s)
         s=[i for i in tk if not i in (s_w.words('english'))]
@@ -334,13 +385,9 @@ class Dialogue_Agent():
         s=s.split(" ")
         return s
     
-    # %%
-    # -- Cesar -- preference extraction
-    
+    #%%
     def preference_extractor(self,user_input):
         """
-        
-
         Parameters
         ----------
         user_input : str
@@ -458,9 +505,44 @@ class Dialogue_Agent():
                     user_preferences[2] = key_list[val_list.index(k)]    
         return user_preferences
     #%%
+        
+    def no_preference(self,user_input, user_preferences):
+        """
+        check if user indicated no preference by using keyword matching and fill the slot.
+    
+        Parameters
+        ----------
+        user_input : str
+            input from the user
+        user_preferences : list
+            list of preferences.
+    
+        Returns
+        -------
+        user_preferences : list
+            return the user_preferences with keyword any if user indicated no preference.
+    
+        """
+        if "world food" in user_input.lower():
+            user_preferences[2]='any'
+        
+        
+        keywords=re.findall( "any\s(\w+)", user_input.lower())
+        if ("area" in keywords):
+            user_preferences[0]='any'
+        if ("price" in keywords):
+            user_preferences[1]='any'
+        if ("food" in keywords):
+            user_preferences[2]='any'
+        return user_preferences
+ 
+ 
+    #%%
     def alternative_preferences(self,user_preferences):
         """
-        used if no restaurants. Use alternative preferences based on set membership to find additional restaurants.
+        State: alternative restaurants in state transition diagram. 
+        Used if no restaurants can be found in either the "inform" or "fill blank slots" state. 
+        Use alternative preferences based on set membership to find additional restaurants.
 
         Parameters
         ----------
@@ -538,99 +620,43 @@ class Dialogue_Agent():
         if food_alternatives:
             del food_alternatives[food_alternatives.index(s_3)]        
         return area_alternatives,price_alternatives,food_alternatives 
-        
-     #%%
-        
-    def no_preference(self,user_input, user_preferences):
-        """
-        check if user indicated no preference by using keyword matching
     
-        Parameters
-        ----------
-        user_input : str
-            input from the user
-        user_preferences : list
-            list of preferences.
-    
-        Returns
-        -------
-        user_preferences : list
-            return the user_preferences with keyword any if user indicated no preference.
-    
-        """
-        if "world food" in user_input.lower():
-            user_preferences[2]='any'
-        if "international food" in user_input.lower():
-            user_preferences[2]='any'
-        
-        keywords=re.findall( "any\s(\w+)", user_input.lower())
-        if ("area" in keywords):
-            user_preferences[0]='any'
-        if ("price" in keywords):
-            user_preferences[1]='any'
-        if ("food" in keywords):
-            user_preferences[2]='any'
-        return user_preferences
- 
- 
     #%%
-    def grounding(self, user_preferences):
+    def get_user_extra_preferences(self,requirement_options,user_input):
         """
-        generate sentence for grounding with the user.
+        get extra preferences from the user input using keyword matching
 
         Parameters
         ----------
-        user_preferences : list
-            list of user preferences.
-
-        Returns
-        -------
-        answer template with slots filled by user preferences
-        """
-        #the preferences are stored in a list of three elements, p[0] for the area, p[1] for the price range and p[2] for the food type
-        answer_template= "So you would like me to find a restaurant "
-        p=user_preferences
-        if p[0]:
-            answer_template+="in the {} of town ".format(p[0])
-        if p[1]:
-            answer_template+="priced {}ly ".format(p[1])
-        if p[2]:
-            answer_template+="serving {} cuisine ".format(p[2])
-        return answer_template.rstrip()+". "
-        
-    
-        #%%
-    def get_alternative_restaurants(self,alternative_preferences):
-        """
-        get alternative restaurants based on the alternative preferences extracted using membership
-
-        Parameters
-        ----------
-        alternative_preferences : list of lists
+        requirement_options : list
+            list of strings corresponding to the extra options.
+        user_input : str
             
 
         Returns
         -------
-        all_alternative_restaurants : list
-            names of found alternatives.
+        user_requirements : list
+            list of extra options extracted using key words.
 
         """
-        import itertools
-        all_alternative_pref=[]
-        all_alternative_restaurants=[]
-        for r in itertools.product(alternative_preferences[0], alternative_preferences[1],alternative_preferences[2]): 
-            all_alternative_pref.append([r[0], r[1],r[2]])
-        for a in all_alternative_pref:
-            all_alternative_restaurants.append(self.lookup(a))
-        all_alternative_restaurants = [item for sublist in all_alternative_restaurants for item in sublist]
-
-        return all_alternative_restaurants
-        
-    
-        #%%
+        user_requirements=[]
+        if "closed kitchen" in user_input or 'a la carte' in user_input: 
+            user_requirements.append("not open kitchen")
+        if "bad food" in user_input: 
+            user_requirements.append("not good food")
+        for requirement in requirement_options:
+            if requirement in user_input:
+                
+                if "no "+requirement in user_input or "not "+requirement in user_input or 'bad '+requirement in user_input:
+                    user_requirements.append("not "+requirement)
+                else:
+                    user_requirements.append(requirement)
+        return user_requirements
+    #%%
     def ask_extra_preferences(self,user_preferences):
         """
-        ask the user for additional preferences using keyword matching, suggest restaurant and give reasoning steps.
+        state: "ask for extra preferences" in State Transition Diagram.
+        Ask the user for additional preferences using keyword matching, suggest restaurant and give reasoning steps.
 
         Parameters
         ----------
@@ -644,7 +670,7 @@ class Dialogue_Agent():
 
         """
         state='confirmpreferences'
-        user_input = input("Any other requirements? You can choose from:\nGood food, open kitchen, good hygiene, children friendly, romantic or busy\n")
+        user_input = input("Dialog Agent: Any other requirements? You can choose from:\nGood food, open kitchen, good hygiene, children friendly, romantic or busy\nUser: ")
         requirement_options=['good food','open kitchen','hygiene', 'children', 'romantic','busy','not boring' ]
         
         user_requirements=self.get_user_extra_preferences(requirement_options,user_input)#extra prefs from user
@@ -682,6 +708,74 @@ class Dialogue_Agent():
         return state
     
     
+     
+
+    #%%
+    def get_alternative_restaurants(self,alternative_preferences):
+        """
+        get alternative restaurants based on the alternative preferences extracted using membership
+
+        Parameters
+        ----------
+        alternative_preferences : list of lists
+            
+
+        Returns
+        -------
+        all_alternative_restaurants : list
+            names of found alternatives.
+
+        """
+        import itertools
+        all_alternative_pref=[]
+        all_alternative_restaurants=[]
+        for r in itertools.product(alternative_preferences[0], alternative_preferences[1],alternative_preferences[2]): 
+            all_alternative_pref.append([r[0], r[1],r[2]])
+        for a in all_alternative_pref:
+            all_alternative_restaurants.append(self.lookup(a))
+        all_alternative_restaurants = [item for sublist in all_alternative_restaurants for item in sublist]
+
+        return all_alternative_restaurants
+        
+    
+        
+    
+
+    #%%
+    def make_inferences(self,KB):
+        """
+        Add knowledge to knowledge base KB by making use of implication rules.
+
+        Parameters
+        ----------
+        KB : set
+            convert to list first.
+
+        Returns
+        -------
+        KB
+            as a set, to eliminate duplicates.
+
+        """
+        applied_rules={}
+        KB=list(KB)
+        for knowledge in KB:
+            applied_rules[knowledge]=[knowledge]
+            for antedecent,consequent in self.implication_rules.items(): #split in antedecent and consequent
+                if type(knowledge)==str:
+                    if knowledge == antedecent: #if knowledge is the antedecent of the rule
+                        for v in consequent:
+                            applied_rules[antedecent]=consequent
+                            KB.append(v)
+                    
+                    
+                    elif knowledge in antedecent:
+                        atoms=antedecent.split(",")
+    
+                        if (set(atoms) & set(KB) == set(atoms)):
+                            applied_rules[antedecent]=consequent
+                            KB.extend(consequent)
+        return applied_rules,set(KB)  
     #%%
     def check_viability(self, applied_rules,user_requirements):
         """
@@ -718,137 +812,22 @@ class Dialogue_Agent():
                             return False, (a,c)
         return False, ("","")
                     
-                    
+                                    
     #%%
     def present_steps(self,applied_rules):
         i=0
         for a,c in applied_rules.items():
             
             print("step {} : {}->{}".format(i, a,c))
-            i+=1
-        
-                    
-                
-    #%%
-    def get_user_extra_preferences(self,requirement_options,user_input):
-        """
-        get extra preferences from the user input using keyword matching
-
-        Parameters
-        ----------
-        requirement_options : list
-            list of strings corresponding to the extra options.
-        user_input : str
-            
-
-        Returns
-        -------
-        user_requirements : list
-            list of extra options extracted using key words.
-
-        """
-        user_requirements=[]
-        if "closed kitchen" in user_input or 'a la carte' in user_input: 
-            user_requirements.append("not open kitchen")
-        if "bad food" in user_input: 
-            user_requirements.append("not good food")
-        for requirement in requirement_options:
-            if requirement in user_input:
-                
-                if "no "+requirement in user_input or "not "+requirement in user_input or 'bad '+requirement in user_input:
-                    user_requirements.append("not "+requirement)
-                else:
-                    user_requirements.append(requirement)
-        return user_requirements
-    #%%
-    def get_restaurant_info(self, restaurant_name):
-        #return the restaurant information given a restaurant_name
-        index=self.restaurant_names.index(restaurant_name)
-        
-        return "Restaurant '{}' serving {} food in {} part of town for {} price".format(restaurant_name.capitalize(),self.food_types[index], self.area[index], self.price_range[index])
-    #%%
-    def get_restaurant_contacts(self,recommendation):
-        #return the restaurant contact information
-        i=self.restaurant_names.index(recommendation)#get index of recommendation
-        phone=self.phone[i]
-        address=self.address[i]
-        return "Alright, here are the contacts:'{}', {}, {}".format(recommendation,phone,address)
-        
-       #%%
-    def make_inferences(self,KB):
-        """
-        Add knowledge to knowledge base KB by making use of implication rules.
-
-        Parameters
-        ----------
-        KB : set
-            convert to list first.
-
-        Returns
-        -------
-        KB
-            as a set, to eliminate duplicates.
-
-        """
-        applied_rules={}
-        KB=list(KB)
-        for knowledge in KB:
-            applied_rules[knowledge]=[knowledge]
-            for antedecent,consequent in self.implication_rules.items(): #split in antedecent and consequent
-                if type(knowledge)==str:
-                    if knowledge == antedecent: #if knowledge is the antedecent of the rule
-                        for v in consequent:
-                            applied_rules[antedecent]=consequent
-                            KB.append(v)
-                    
-                    
-                    elif knowledge in antedecent:
-                        atoms=antedecent.split(",")
+            i+=1          
     
-                        if (set(atoms) & set(KB) == set(atoms)):
-                            applied_rules[antedecent]=consequent
-                            KB.extend(consequent)
-        return applied_rules,set(KB)     
+
+        
+          
+    
+
+
     # %%
-    # -- Ivan -- finite-state dialogue agent
-    
-    def agree(self,user_input):
-        """
-        check whether user agrees or denies
-    
-        Parameters
-        ----------
-        user_input : str
-            DESCRIPTION.
-    
-        Returns
-        -------
-        bool
-            true for agree, false for deny.
-    
-        """
-        response = self.classification(user_input)
-        if response in ["ack", "affirm"]:
-            return True
-        elif response in ["deny", "negate"]:
-            return False
-        else:
-            return response
-
-        #%%
-    def suggest_restaurant(self):
-        answer=""
-        if len(self.suggestions)==1:
-            answer="I could only find one option for you: {}. Is this fine?\n"
-        else:
-            answer=random.choice(self.responses.get("Answer"))
-        self.recommendation=random.choice(self.suggestions)
-        self.suggestions.remove(self.recommendation)
-        return answer.format(self.recommendation)
-            
-       # %%
-    # -- Ivan -- look for matches with preferences in the database
-    
     def lookup(self,user_preferences):
         """
         Look for restaurants in database using user preferences
@@ -894,14 +873,52 @@ class Dialogue_Agent():
                 res.append(self.restaurant_names[i])
                 
         return res
-    
+    #%%
+    def grounding(self, user_preferences):
+        """
+        generate sentence for grounding with the user.
 
-    
-    # %%
-    '''
-    
-    statelog = list()
-    res=[] #list of restaurant recommendations
-    if __name__ == "__main__":
-        dialogue("", "init", [0,0,0])
-        '''
+        Parameters
+        ----------
+        user_preferences : list
+            list of user preferences.
+
+        Returns
+        -------
+        answer template with slots filled by user preferences
+        """
+        #the preferences are stored in a list of three elements, p[0] for the area, p[1] for the price range and p[2] for the food type
+        answer_template= "So you would like me to find a restaurant "
+        p=user_preferences
+        if p[0]:
+            answer_template+="in the {} of town ".format(p[0])
+        if p[1]:
+            answer_template+="priced {}ly ".format(p[1])
+        if p[2]:
+            answer_template+="serving {} cuisine ".format(p[2])
+        return answer_template.rstrip()+". "
+        
+    #%%
+    def get_restaurant_info(self, restaurant_name):
+        #return the restaurant information given a restaurant_name
+        index=self.restaurant_names.index(restaurant_name)
+        
+        return "Restaurant '{}' serving {} food in {} part of town for {} price".format(restaurant_name.capitalize(),self.food_types[index], self.area[index], self.price_range[index])
+    #%%
+    def get_restaurant_contacts(self,recommendation):
+        #return the restaurant contact information
+        i=self.restaurant_names.index(recommendation)#get index of recommendation
+        phone=self.phone[i]
+        address=self.address[i]
+        return "Alright, here are the contacts:'{}', {}, {}".format(recommendation.capitalize(),phone,address)
+    #%%
+    def suggest_restaurant(self):
+        answer=""
+        if len(self.suggestions)==1:
+            answer="I could only find one option for you: {}. Is this fine?\n"
+        else:
+            answer=random.choice(self.responses.get("Answer"))
+        self.recommendation=random.choice(self.suggestions)
+        self.suggestions.remove(self.recommendation)
+        return answer.format(self.recommendation.capitalize())
+            

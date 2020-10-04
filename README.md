@@ -1,22 +1,43 @@
 # Dialog State Agent
 
 Dialog State Agent created for the course 1-GS Methods in AI research (INFOMAIR) 2020-2021 at Utrecht University.
-Current functionality is train and test classifier, classify user utterance.
+Current functionality is Classification (classification.py, baseline.py) and start dialogue agent.
 
-Run Dialogue_Agent.py for the text based chatbot for restaurant domain.
+Run main.py for the text based chatbot for restaurant domain.
 classification.py contains functions to train and test classifiers.
 
-# Packages
+# Packages and imports
 ```
-Pandas
-python-Levenshtein
-NLTK
-re
-random
-Numpy
-SkLearn
-imblearn
-GridSearchCV
+#dialogue_agent.py:
+import pandas as pd
+from Levenshtein import distance as dt
+from nltk.corpus import stopwords as s_w
+from nltk.tokenize import word_tokenize as w_t
+from classification import Classification
+import re
+import random
+import time
+
+#classification.py
+import numpy as np
+from nltk.stem.snowball import SnowballStemmer
+from sklearn.model_selection import train_test_split
+import matplotlib.pyplot as plt
+import itertools
+from sklearn.feature_extraction.text import CountVectorizer
+from sklearn.metrics import confusion_matrix
+from sklearn.metrics import f1_score
+from sklearn.metrics import precision_score
+from sklearn.metrics import recall_score
+from sklearn.neural_network import MLPClassifier
+from sklearn.linear_model import LogisticRegression
+from sklearn.model_selection import KFold
+from sklearn.model_selection import GridSearchCV
+
+#baseline.py
+import nltk
+nltk.download("punkt")
+from nltk.tokenize import word_tokenize
 
 
 ```
@@ -33,6 +54,7 @@ Example code:
     b = Baseline()
     b.open_dataset("dialog_acts.dat")
     b.split_dataset()
+    #test baseline 1
     b.get_highest_label()
     b.test_highest_label()
     print(b.score())
@@ -40,6 +62,7 @@ Example code:
 To test the keyword rules, simply run the function:
 
 ```python
+    #test baseline 2
     b.test_keyword_rule()
     print(b.score())
 ```
@@ -58,28 +81,23 @@ To classify user utterance, simply run the following command:
 
 # classification.py
 
-Class to split data and train and test classifier. 
+Split and preprocess data, train LR or NN classifier on training set and test on test set
 Usage: 
-1. create instance of class Classification()
+
 ```python
     clf=Classification()
-```
-2. initialize data using initialize_data(filename)
-```python
     clf.initialize_data("dialog_acts.dat")
+    clf.train_lr()#or clf.train_nn()
+    clf.test_clf() #to apply to test set
 ```
-3. train classifier using one of the classifiers (LR or NN)
-```python
-    clf.train_lr()#or
-    clf.train_nn()
-```
-4. Testing and getting performance measures:
 
-Test and make confusion matrix. Also saves the wrongly classified sentences in class variable.
+Predict a single sentence after training phase
     
 ```python
-    clf.test_clf()
+    sentence="Hi, I would like to get a suggestion"
+    clf.predict(sentence):
 ```
+
 
 To get wrongly classified sentences, after testing:
 
@@ -113,23 +131,20 @@ GridSearch:
     gs.cv_results_
 ```
 
-Predict a single sentence
-    
-```python
-    sentence="Hi, I would like to get a suggestion"
-    clf.predict(sentence):
-```
+
 
 # dialogue_agent.py
 
-Class to build a dialog agent. Agent works with states, as depicted in the "state transition diagram.pdf" file.
+Class to build a dialog agent. Agent works with states, as depicted in the "STD.pdf" file.
 The dialogue agent initializes a classifier trained on dialog acts in part 1a and initializes the data from the database "restaurant_info.csv". 
 
 Basic usage: 
 
 ```python
     from dialogue_agent import Dialogue_Agent
-    da = Dialogue_Agent("dialog_acts.dat","restaurant_info.csv")
+    #third parameter indicates which machine learning model to use. "nn" for Neural Network, empty string for Logistic Regression 
+    da = Dialogue_Agent("dialog_acts.dat","restaurant_info.csv","nn")
+    da.start_dialogue()
 ```
 
 The dialog agent also keeps track of its states. These can be printed with: 
@@ -138,23 +153,17 @@ The dialog agent also keeps track of its states. These can be printed with:
     da.statelog
 ```
 
-Some important methods for the dialog agent: 
-
-```python
-    da.preference_extractor(user_utterance)
-    da.dialogue(self, user_input, state, user_preferences) #recursive state transition function. In each state, the agent interacts with the user.
-    da.lookup(user_preferences) #find all restaurants matching user preferences.
-    alternative_preferences=da.alternative_preferences(self,user_preferences) #used if no restaurants. Get alternative preferences based on set membership to find additional restaurants.
-    da.get_alternative_restaurants(self,alternative_preferences) #get all alternative restaurants using the alternative preferences.
-    da.ask_extra_preferences(self,user_preferences) #ask user for additional preferences, suggest restaurant and give reason why restaurant was suggested.
-    da.make_inferences(self,KB) #given a knowledge base, infer new knowledge based on self defined inference rules.
-```
 
 Extra Configurations:
 
-```python
-    da = Dialogue_Agent("dialog_acts.dat","restaurant_info.csv")
-    da.configure_formality(True) #False=informal
-    da.configure_delay(0.5) #configure_delay in seconds. 
-    da.start_dialogue()
 ```
+    The agent can be configured after starting the dialogue. 
+    
+    "configure formal" #use formal sentences. 
+    "configure informal" #use informal sentences. Standard configuration.
+    "configure delay" #put a 0.5s delay on each answer from the system
+    "configure no delay" #remove delay. Standard configuration.
+           
+```
+States:
+The agent starts in the initialization state and progresses the conversation and changes states to find a suitable restaurant for the user. Some states include "answer" (to suggest restaurants if it finds any) and "fill_blanks" (used to fill the preference slots).

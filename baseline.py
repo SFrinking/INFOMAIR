@@ -9,31 +9,31 @@ class Baseline():
         self.highest_label=""
         self.correct, self.incorrect=0,0
         
-        self.KEYWORDS_M = {"request": ["where", "what", "whats", "type", "phone", "number",  #meaningful categories
-                                "address", "postcode", "post code"], 
-                    "reqalts": ["how about", "what about", "anything else"],
-                    #"inform": ["restaurant", "food"],
-                    "confirm": ["is it", "does it", "do they", "is there", "is that"]
-                     }
-                        
-            
-        self.KEYWORDS_TS = {"repeat": ["repeat", "back", "again"],                   #turn-service categories
-                    "ack": ["okay", "kay", "ok", "fine"],
-                    "deny": ["wrong", "dont want", "not"],
-                    "reqmore": ["more"],
-                    "affirm": ["yes", "right", "correct", "yeah", "uh huh"],
-                    "negate": ["no"]
-                      }
+        keywords_m = {"request": ["where", "what", "whats", "type", "phone", "number",  #meaningful categories
+                "address", "postcode", "post code"],
+                "inform": ["restaurant", "food"],
+                "confirm": ["is it", "does it", "do they", "is there", "is that"]
+                 }
                     
-        self.KEYWORDS_DS = {"hello": ["hi", "hello"],                                #dialogue-service categories
-                    "goodbye": ["goodbye", "good bye", "bye", "stop"],
-                    "thankyou": ["thank", "thanks"],
-                    "restart": ["start over", "reset", ],
-                    "null": ["cough", "unintelligible", "tv_noise", "noise", 
-                             "sil", "sigh", "um"]
-                      }
-        self.wrong_predictions=[]
 
+    keywords_ts = {"ack": ["okay", "kay", "ok", "fine"],                       #turn-service categories
+                "deny": ["wrong", "dont want", "not"],
+                "reqmore": ["more"],
+                "affirm": ["yes", "right", "correct", "yeah", "uh huh"],
+                "negate": ["no"]
+                  }
+                
+    keywords_ds = {"hello": ["hi", "hello"],                                #dialogue-service categories
+                "goodbye": ["goodbye", "bye", "stop"],
+                "thankyou": ["thank", "thanks"],
+                "repeat": ["repeat", "back", "again"],
+                "restart": ["start over", "reset", "restart"],
+                "reqalts": ["how about", "what about", "anything else"],
+                "null": ["cough", "unintelligible", "tv_noise", "noise", 
+                         "sil", "sigh", "um"]
+                  }
+        self.wrong_predictions=[]
+#%%
     def open_dataset(self, filename):
         """
         open dataset
@@ -58,21 +58,19 @@ class Baseline():
             self.y=y
     
     
-    
+    #%%
     def split_dataset(self):
         from sklearn.model_selection import train_test_split
         self.X_train, self.X_test, self.y_train, self.y_test = train_test_split(self.X,self.y, test_size=0.15)
         
-    
-    
-    
+    #%%
     def convert_to_dict_freq(self): 
         counts_dictionary = {}
         for i in self.y:
           counts_dictionary[i] = counts_dictionary.get(i, 0) + 1
         return counts_dictionary
     
-    
+    #%%
     def get_highest_in_dict(self,d):
         count=0
         k=""
@@ -81,7 +79,7 @@ class Baseline():
                 count=value
                 k=key
         return k,count
-    
+    #%%
     def get_highest_label(self):
         """
         make a dictionary out of y with frequencies and find out which label is most frequent
@@ -91,7 +89,13 @@ class Baseline():
         k,count=self.get_highest_in_dict(d)
         self.highest_label=k
     
-    def test_highest_label(self):
+#%%
+                
+    def predict_highest_label_rule(self):
+        #just return single instance as highest label
+        return self.highest_label
+    #%%
+    def test_baseline_one(self):
         """
         classify all cases in testset as highest label
 
@@ -102,14 +106,7 @@ class Baseline():
                 self.correct+=1
             else:
                 self.incorrect+=1
-                
-    def get_wrong_predictions(self):
-        return self.wrong_predictions
-
-                
-    def predict_highest_label_rule(self):
-        return self.highest_label
-    
+    #%%
     def predict_keyword_rule(self,x):
         """
         Given a phrase, predict the label based on key-word matching rules
@@ -141,8 +138,8 @@ class Baseline():
         return y_pred
     
     
-    
-    def test_keyword_rule(self):
+    #%%
+    def test_baseline_two(self):
         """
         Test keyword-matching classification using whole dataset
 
@@ -157,10 +154,13 @@ class Baseline():
                 self.wrong_predictions.append((self.X[n],y_pred,self.y[n]))
         
           
-            
+            #%%
     def score(self):
         return self.correct/(self.correct+self.incorrect)
-    
+    #%%
+    def get_wrong_predictions(self):
+        return self.wrong_predictions
+    #%%
     def user_input(self):
         while True:
             classifier=input("enter 1 for highest-label classification, enter 2 for rule-based classification and enter stop to quit:\n")
@@ -185,29 +185,4 @@ class Baseline():
 
             else:
                 break
-    """
-    
-    X,y= open_dataset("dialog_acts.dat")
-    X_train, X_test, y_train, y_test = split_dataset(X,y)
-    while True:
-        choice = input("Enter 1 for baseline, 2 for keyword matching, 'stop' to exit:\n")
-        if (choice == "1"):
-            dict=convert_to_dict_freq(y_train)
-            highest_label, highest_count=get_highest(dict)
-            correct, incorrect= baseline_one(y_test, highest_label)
-            acc = correct/len(y_test)
-            misclassification= incorrect/len(y_test)
-            print("accuracy,misclassification of keyword matching = {},{}".format(acc,misclassification))
-            y_pred=user_utterance(highest_label)
-        elif (choice=="2"):
-            keywords_m,keywords_ts,keywords_ds = get_key_words()  
-            correct,incorrect=baseline_two(X)
-            acc = correct/len(X)
-            misclassification= incorrect/len(X)
-            print("accuracy,misclassification of keyword matching = {},{}".format(acc,misclassification))
-            y_pred=user_utterance(keyword_rule)
-            
-        elif( choice=="stop"):
-            break
-    """
-    
+
