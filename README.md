@@ -25,6 +25,43 @@ Some dictionaries might have to be downloaded:
 'stopwords' use nltk.download('stopwords')
 ```
 
+# dialogue_agent.py
+
+Class to build a dialog agent. Agent works with states, as depicted in the "STD.pdf" file.
+The dialogue agent initializes a classifier from class classification.py trained on dialog acts in part 1a and initializes the data from the database "restaurant_info.csv". 
+
+Basic usage: 
+
+```python
+    from dialogue_agent import Dialogue_Agent
+    #third parameter indicates which machine learning model to use. "nn" for Neural Network, empty string for Logistic Regression 
+    da = Dialogue_Agent("dialog_acts.dat","restaurant_info.csv","nn")
+    da.start_dialogue()
+```
+
+Entering 'exit' will exit the recursive function and stop the program. 
+The dialog agent also keeps track of its states. These can be printed with: 
+
+```python
+    da.statelog
+```
+
+
+Extra Configurations:
+
+```
+    The agent can be configured after starting the dialogue. Use the following utterances to configure:
+    
+    "configure formal" #use formal sentences. 
+    "configure informal" #use informal sentences. Standard configuration.
+    "configure delay" #put a 0.5s delay on each answer from the system
+    "configure no delay" #remove delay. Standard configuration.
+           
+```
+States:
+The agent starts in the initialization state and progresses the conversation and changes states to find a suitable restaurant for the user. Some states include "answer" (to suggest restaurants if it finds any) and "fill_blanks" (used to fill the preference slots).
+
+
 # baseline.py
 Implementation of 2 baselines:
 1. classify every utterance as majority class
@@ -117,38 +154,3 @@ GridSearch:
 
 
 
-# dialogue_agent.py
-
-Class to build a dialog agent. Agent works with states, as depicted in the "STD.pdf" file.
-The dialogue agent initializes a classifier trained on dialog acts in part 1a and initializes the data from the database "restaurant_info.csv". 
-
-Basic usage: 
-
-```python
-    from dialogue_agent import Dialogue_Agent
-    #third parameter indicates which machine learning model to use. "nn" for Neural Network, empty string for Logistic Regression 
-    da = Dialogue_Agent("dialog_acts.dat","restaurant_info.csv","nn")
-    da.start_dialogue()
-```
-
-Entering 'exit' will exit the recursive function and stop the program. 
-The dialog agent also keeps track of its states. These can be printed with: 
-
-```python
-    da.statelog
-```
-
-
-Extra Configurations:
-
-```
-    The agent can be configured after starting the dialogue. Use the following utterances to configure:
-    
-    "configure formal" #use formal sentences. 
-    "configure informal" #use informal sentences. Standard configuration.
-    "configure delay" #put a 0.5s delay on each answer from the system
-    "configure no delay" #remove delay. Standard configuration.
-           
-```
-States:
-The agent starts in the initialization state and progresses the conversation and changes states to find a suitable restaurant for the user. Some states include "answer" (to suggest restaurants if it finds any) and "fill_blanks" (used to fill the preference slots).
