@@ -273,14 +273,14 @@ class Dialogue_Agent():
         
         
         if state == "answer": 
-            if self.suggestions:  
+            if self.suggestions:  #found at least 1 restaurant
                 user_input=input("Dialog Agent: "+self.suggest_restaurant()+"User: ")
                 state = self.classification(user_input)
                 if state in ["ack", "affirm"]:
                     state = "goodbye"
                 elif state in ["reqalts", "reqmore", "deny", "negate"]:
                     state = "answer"
-            else:
+            else: #no restaurants found. Search for alternatives
                 alternatives=self.get_alternative_restaurants(self.alternative_preferences(user_preferences))#offer alternatives
                 if len(alternatives)==1: #found 1 alternative
                     print("Dialog Agent: "+random.choice(self.responses.get("NoOptions"))+"Let me look for an alternative for you...\n")
@@ -467,18 +467,7 @@ class Dialogue_Agent():
                 val_list = list(d.values())
                 if k<=2:
                     user_preferences[1] = key_list[val_list.index(k)]
-            for i in s:
-                for j in list(set(self.price_range)):
-                    if (dt(i, j)<=3):   
-                        d[j] = dt(i, j)
-            for i in d.values():
-                l.append(i)
-            if len(l)>0:
-                k = min(l)
-                key_list = list(d.keys())
-                val_list = list(d.values())
-                if k<=2:
-                    user_preferences[1] = key_list[val_list.index(k)]
+            
         #In case the  food type has been mispelt                
         #thresolds for Levenshtein distances might need to be better tuned for each preference
         if (user_preferences[2] == 0):

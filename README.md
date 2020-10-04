@@ -8,39 +8,23 @@ classification.py contains functions to train and test classifiers.
 
 # Packages and imports
 ```
-#dialogue_agent.py:
-import pandas as pd
-from Levenshtein import distance as dt
-from nltk.corpus import stopwords as s_w
-from nltk.tokenize import word_tokenize as w_t
-from classification import Classification
-import re
-import random
-import time
+python-Levenshtein
+NLTK
+Numpy
+Pandas
+SkLearn
+random
+time
+re
+```
 
-#classification.py
-import numpy as np
-from nltk.stem.snowball import SnowballStemmer
-from sklearn.model_selection import train_test_split
-import matplotlib.pyplot as plt
-import itertools
-from sklearn.feature_extraction.text import CountVectorizer
-from sklearn.metrics import confusion_matrix
-from sklearn.metrics import f1_score
-from sklearn.metrics import precision_score
-from sklearn.metrics import recall_score
-from sklearn.neural_network import MLPClassifier
-from sklearn.linear_model import LogisticRegression
-from sklearn.model_selection import KFold
-from sklearn.model_selection import GridSearchCV
-
-#baseline.py
-import nltk
-nltk.download("punkt")
-from nltk.tokenize import word_tokenize
-
+Some dictionaries might have to be downloaded:
 
 ```
+'punkt', use nltk.download('punkt')
+'stopwords' use nltk.download('stopwords')
+```
+
 # baseline.py
 Implementation of 2 baselines:
 1. classify every utterance as majority class
@@ -147,6 +131,7 @@ Basic usage:
     da.start_dialogue()
 ```
 
+Entering 'exit' will exit the recursive function and stop the program. 
 The dialog agent also keeps track of its states. These can be printed with: 
 
 ```python
