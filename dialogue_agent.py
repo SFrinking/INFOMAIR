@@ -131,6 +131,7 @@ class Dialogue_Agent():
     def start_dialogue(self):
         self.dialogue("", "init", [0,0,0])
     #%%
+    '''
     def configure_formality(self, formality):
         #formality needs to be a bool. True=formal, False=informal. Standard False.
         if formality==True:
@@ -158,10 +159,11 @@ class Dialogue_Agent():
         elif user_input=="configure informal":
             self.configure_formality(False)
         elif user_input=="configure delay":
-            self.configure_delay(0.5)
+            self.configure_delay(2)
         elif user_input=="configure no delay":
             self.configure_delay(0)
     #%%
+    '''
     
     def dialogue(self, user_input, state, user_preferences):
         """
